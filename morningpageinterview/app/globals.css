@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/woff2/PretendardVariable.woff2") format("woff2");
+  font-weight: 45 920;
+  font-display: swap;
+}
+
+:root {
+  --font-pretendard: "Pretendard";
+  background: #F5F4F2;
+  color: #111111;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: #F5F4F2;
+  color: #111111;
+  font-family: var(--font-pretendard), Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+img {
+  display: block;
+}
+
+.page-shell {
+  width: min(100%, 1440px);
+  margin: 0 auto;
+}
+
+.wordmark {
+  font-size: clamp(13px, 1.45vw, 19px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.hairline {
+  border-color: rgba(17, 17, 17, 0.24);
+}
+
+.section-pad {
+  padding: clamp(42px, 8vw, 118px) clamp(20px, 3vw, 30px);
+}
+
+.ko-keep {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.hourglass {
+  position: relative;
+  width: 28px;
+  height: 42px;
+  border: 2px solid #111111;
+  border-radius: 999px;
+  animation: hourglass-turn 2.4s ease-in-out infinite;
+}
+
+.hourglass::before,
+.hourglass::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 13px;
+  height: 13px;
+  transform: translateX(-50%);
+  background: #111111;
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+
+.hourglass::before {
+  top: 7px;
+  animation: sand-top 2.4s ease-in-out infinite;
+}
+
+.hourglass::after {
+  bottom: 7px;
+  clip-path: polygon(50% 0, 0 100%, 100% 100%);
+  animation: sand-bottom 2.4s ease-in-out infinite;
+}
+
+@keyframes hourglass-turn {
+  0%,
+  42% {
+    transform: rotate(0deg);
+  }
+  58%,
+  100% {
+    transform: rotate(180deg);
+  }
+}
+
+@keyframes sand-top {
+  0%,
+  35% {
+    opacity: 1;
+    transform: translateX(-50%) scaleY(1);
+  }
+  48%,
+  100% {
+    opacity: 0.2;
+    transform: translateX(-50%) scaleY(0.25);
+  }
+}
+
+@keyframes sand-bottom {
+  0%,
+  35% {
+    opacity: 0.2;
+    transform: translateX(-50%) scaleY(0.25);
+  }
+  48%,
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scaleY(1);
+  }
+}
