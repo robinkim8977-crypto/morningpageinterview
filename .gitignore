@@ -1,0 +1,14 @@
+.env*
+!.env.example
+.next/
+node_modules/
+.pnpm-store/
+.vercel/
+out/
+coverage/
+*.log
+*.swp
+.DS_Store
+*.tsbuildinfo
+.codex/
+.agents/
