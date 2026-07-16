@@ -31,8 +31,11 @@ interface SpeechRecognitionLike extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
+  maxAlternatives: number;
   start: () => void;
   stop: () => void;
+  abort: () => void;
+  onstart: (() => void) | null;
   onresult: ((event: SpeechRecognitionEventLike) => void) | null;
   onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
   onend: (() => void) | null;
@@ -60,6 +63,7 @@ export function InterviewSection() {
   const answerRef = useRef("");
   const questionIdRef = useRef<number>(questions[0].id);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const stopRequestedRef = useRef(false);
   const currentQuestion = questions[currentIndex];
   const questionText = splitQuestion(currentQuestion.question);
 
@@ -88,8 +92,15 @@ export function InterviewSection() {
 
     const recognition = new SpeechRecognition();
     recognition.lang = "ko-KR";
-    recognition.continuous = true;
+    const isAppleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    recognition.continuous = !isAppleMobile;
     recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => {
+      setIsListening(true);
+      setSpeechMessage("");
+    };
     recognition.onresult = (event) => {
       let finalText = "";
       let interimText = "";
@@ -111,26 +122,34 @@ export function InterviewSection() {
     };
     recognition.onerror = (event) => {
       const messages: Record<string, string> = {
-        "not-allowed": "마이크 권한이 필요해요. 브라우저 설정에서 허용해 주세요.",
+        "not-allowed": "마이크 권한이 필요해요. 브라우저 설정에서 이 사이트의 마이크를 허용해 주세요.",
+        "service-not-allowed": "이 브라우저에서 음성 인식 서비스를 사용할 수 없어요. Safari 또는 Chrome의 마이크 권한을 확인해 주세요.",
         "audio-capture": "사용할 수 있는 마이크를 찾지 못했어요.",
         network: "음성 인식 연결이 원활하지 않아요. 잠시 후 다시 시도해 주세요.",
-        "no-speech": "음성이 들리지 않았어요. 다시 말해 주세요."
+        "no-speech": "음성이 들리지 않았어요. 버튼을 다시 누르고 가까이에서 말해 주세요.",
+        "language-not-supported": "이 브라우저의 음성 인식에서 한국어를 지원하지 않아요.",
+        aborted: ""
       };
-      setSpeechMessage(messages[event.error] || "음성을 인식하지 못했어요. 다시 시도해 주세요.");
+      if (!(event.error === "aborted" && stopRequestedRef.current)) {
+        setSpeechMessage(messages[event.error] ?? `음성 인식을 시작하지 못했어요. (${event.error})`);
+      }
       setIsListening(false);
       setInterimTranscript("");
     };
     recognition.onend = () => {
       setIsListening(false);
       setInterimTranscript("");
+      stopRequestedRef.current = false;
     };
     recognitionRef.current = recognition;
 
     return () => {
+      stopRequestedRef.current = true;
+      recognition.onstart = null;
       recognition.onresult = null;
       recognition.onerror = null;
       recognition.onend = null;
-      recognition.stop();
+      recognition.abort();
       recognitionRef.current = null;
     };
   }, [persistAnswer]);
@@ -176,21 +195,24 @@ export function InterviewSection() {
     if (!recognition) return;
 
     if (isListening) {
+      stopRequestedRef.current = true;
       recognition.stop();
       return;
     }
 
+    stopRequestedRef.current = false;
     setSpeechMessage("");
     setInterimTranscript("");
     try {
       recognition.start();
-      setIsListening(true);
     } catch {
       setSpeechMessage("음성 기록을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setIsListening(false);
     }
   }
 
   function move(nextIndex: number) {
+    stopRequestedRef.current = true;
     recognitionRef.current?.stop();
     persistAnswer(answerRef.current, currentQuestion.id);
     const nextQuestion = questions[nextIndex];
@@ -203,6 +225,7 @@ export function InterviewSection() {
   }
 
   function completeInterview() {
+    stopRequestedRef.current = true;
     recognitionRef.current?.stop();
     persistAnswer(answerRef.current, currentQuestion.id);
     const session = readInterviewSession();
@@ -231,9 +254,24 @@ export function InterviewSection() {
             ) : null}
           </div>
           <div className="my-14 border-t hairline" />
-          <label className="mb-4 block text-2xl font-extrabold tracking-[-0.04em]" htmlFor="answer">
-            [답변하기]
-          </label>
+          <div className="mb-4 flex flex-nowrap items-center gap-2 sm:gap-3">
+            <label className="block shrink-0 text-xl font-extrabold tracking-[-0.04em] sm:text-2xl" htmlFor="answer">
+              [답변하기]
+            </label>
+            <Button
+              type="button"
+              variant={isListening ? "default" : "ghost"}
+              onClick={toggleListening}
+              disabled={!speechSupported}
+              aria-pressed={isListening}
+              className={isListening
+                ? "h-11 shrink-0 bg-red-500 px-3 text-white hover:bg-red-600 sm:px-5"
+                : "h-11 shrink-0 border border-black/20 px-3 sm:px-5"}
+            >
+              {isListening ? <Square size={15} fill="currentColor" /> : <Mic size={17} />}
+              {isListening ? "기록 중지" : "음성 기록"}
+            </Button>
+          </div>
           <Textarea
             id="answer"
             value={answer}
@@ -241,25 +279,12 @@ export function InterviewSection() {
             placeholder="미래의 기억을 떠올리며 상세하게 적어주세요."
             className="ko-keep"
           />
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant={isListening ? "default" : "ghost"}
-              onClick={toggleListening}
-              disabled={!speechSupported}
-              aria-pressed={isListening}
-              className={isListening ? "bg-red-500 text-white hover:bg-red-600" : "border border-black/20"}
-            >
-              {isListening ? <Square size={16} fill="currentColor" /> : <Mic size={18} />}
-              {isListening ? "음성 기록 중지" : "음성으로 기록하기"}
-            </Button>
-            {isListening ? (
-              <p className="flex items-center gap-2 text-sm font-semibold text-red-600" role="status">
-                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
-                듣고 있어요{interimTranscript ? ` · ${interimTranscript}` : "…"}
-              </p>
-            ) : null}
-          </div>
+          {isListening ? (
+            <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-red-600" role="status">
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
+              듣고 있어요{interimTranscript ? ` · ${interimTranscript}` : "…"}
+            </p>
+          ) : null}
           {!speechSupported ? (
             <p className="mt-3 text-sm font-medium text-black/55">이 브라우저는 음성 기록을 지원하지 않아요. Chrome 또는 Edge에서 이용해 주세요.</p>
           ) : null}
