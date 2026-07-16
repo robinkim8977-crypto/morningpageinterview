@@ -11,6 +11,7 @@ import { questions } from "@/data/questions";
 import { readInterviewSession, saveInterviewSession } from "@/lib/storage";
 
 const total = questions.length;
+const speechUnavailableMessage = "음성 기록을 사용할 수 없습니다. 마이크 권한을 확인한 후 Safari/Google에서 열어주세요.";
 
 interface SpeechRecognitionEventLike extends Event {
   resultIndex: number;
@@ -122,16 +123,16 @@ export function InterviewSection() {
     };
     recognition.onerror = (event) => {
       const messages: Record<string, string> = {
-        "not-allowed": "마이크 권한이 필요해요. 브라우저 설정에서 이 사이트의 마이크를 허용해 주세요.",
-        "service-not-allowed": "이 브라우저에서 음성 인식 서비스를 사용할 수 없어요. Safari 또는 Chrome의 마이크 권한을 확인해 주세요.",
-        "audio-capture": "사용할 수 있는 마이크를 찾지 못했어요.",
+        "not-allowed": speechUnavailableMessage,
+        "service-not-allowed": speechUnavailableMessage,
+        "audio-capture": speechUnavailableMessage,
         network: "음성 인식 연결이 원활하지 않아요. 잠시 후 다시 시도해 주세요.",
         "no-speech": "음성이 들리지 않았어요. 버튼을 다시 누르고 가까이에서 말해 주세요.",
-        "language-not-supported": "이 브라우저의 음성 인식에서 한국어를 지원하지 않아요.",
+        "language-not-supported": speechUnavailableMessage,
         aborted: ""
       };
       if (!(event.error === "aborted" && stopRequestedRef.current)) {
-        setSpeechMessage(messages[event.error] ?? `음성 인식을 시작하지 못했어요. (${event.error})`);
+        setSpeechMessage(messages[event.error] ?? speechUnavailableMessage);
       }
       setIsListening(false);
       setInterimTranscript("");
@@ -238,10 +239,10 @@ export function InterviewSection() {
   }
 
   return (
-    <main className="grid min-h-screen bg-background lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_470px]">
-      <section className="flex min-h-screen flex-col">
+    <main className="grid min-h-[100dvh] bg-background lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_470px]">
+      <section className="flex min-h-[100dvh] flex-col">
         <Header />
-        <div className="flex flex-1 flex-col px-[clamp(28px,4vw,64px)] pb-28 pt-16">
+        <div className="flex flex-1 flex-col px-[clamp(28px,4vw,64px)] pb-64 pt-16 md:pb-32">
           <p className="mb-9 text-6xl font-medium leading-none tracking-[-0.06em] md:text-7xl">Q.{currentQuestion.id}</p>
           <div className="ko-keep max-w-5xl">
             <p className="text-4xl font-medium leading-[1.08] tracking-[-0.05em] md:text-5xl">
@@ -286,12 +287,12 @@ export function InterviewSection() {
             </p>
           ) : null}
           {!speechSupported ? (
-            <p className="mt-3 text-sm font-medium text-black/55">이 브라우저는 음성 기록을 지원하지 않아요. Chrome 또는 Edge에서 이용해 주세요.</p>
+            <p className="mt-3 text-sm font-semibold text-red-600" role="alert">{speechUnavailableMessage}</p>
           ) : null}
           {speechMessage ? <p className="mt-3 text-sm font-semibold text-red-600" role="alert">{speechMessage}</p> : null}
           <p className="mt-3 text-2xl font-medium text-black/35">{answer.length}자 / 권장 300자 이상</p>
         </div>
-        <footer className="fixed bottom-0 left-0 right-0 grid gap-4 border-t hairline bg-background px-[clamp(20px,3vw,30px)] py-5 md:grid-cols-[1fr_auto_1fr] md:items-end lg:right-[360px] xl:right-[470px]">
+        <footer className="fixed bottom-0 left-0 right-0 grid gap-4 border-t hairline bg-background px-[clamp(20px,3vw,30px)] pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 md:grid-cols-[1fr_auto_1fr] md:items-end lg:right-[360px] xl:right-[470px]">
           <div>
             <p className="mb-1 text-3xl font-medium tracking-[-0.04em]">
               {currentQuestion.id}/{total}
