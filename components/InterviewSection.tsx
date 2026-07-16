@@ -2,7 +2,7 @@
 
 import { type ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mic, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Header } from "@/components/Header";
@@ -11,6 +11,34 @@ import { questions } from "@/data/questions";
 import { readInterviewSession, saveInterviewSession } from "@/lib/storage";
 
 const total = questions.length;
+
+interface SpeechRecognitionEventLike extends Event {
+  resultIndex: number;
+  results: {
+    [index: number]: {
+      isFinal: boolean;
+      [index: number]: { transcript: string };
+    };
+    length: number;
+  };
+}
+
+interface SpeechRecognitionErrorEventLike extends Event {
+  error: string;
+}
+
+interface SpeechRecognitionLike extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 function splitQuestion(question: string) {
   const [lead, ...rest] = question.split("\n\n");
@@ -25,8 +53,13 @@ export function InterviewSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answer, setAnswer] = useState("");
   const [lastSavedAt, setLastSavedAt] = useState("방금 전");
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const [speechMessage, setSpeechMessage] = useState("");
+  const [interimTranscript, setInterimTranscript] = useState("");
   const answerRef = useRef("");
   const questionIdRef = useRef<number>(questions[0].id);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const currentQuestion = questions[currentIndex];
   const questionText = splitQuestion(currentQuestion.question);
 
@@ -40,6 +73,67 @@ export function InterviewSection() {
     });
     setLastSavedAt("방금 전");
   }, []);
+
+  useEffect(() => {
+    const speechWindow = window as typeof window & {
+      SpeechRecognition?: SpeechRecognitionConstructor;
+      webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    };
+    const SpeechRecognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "ko-KR";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = (event) => {
+      let finalText = "";
+      let interimText = "";
+
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const transcript = event.results[index][0].transcript;
+        if (event.results[index].isFinal) finalText += transcript;
+        else interimText += transcript;
+      }
+
+      if (finalText.trim()) {
+        const separator = answerRef.current && !answerRef.current.endsWith(" ") ? " " : "";
+        const nextAnswer = `${answerRef.current}${separator}${finalText.trim()}`;
+        answerRef.current = nextAnswer;
+        setAnswer(nextAnswer);
+        persistAnswer(nextAnswer, questionIdRef.current);
+      }
+      setInterimTranscript(interimText);
+    };
+    recognition.onerror = (event) => {
+      const messages: Record<string, string> = {
+        "not-allowed": "마이크 권한이 필요해요. 브라우저 설정에서 허용해 주세요.",
+        "audio-capture": "사용할 수 있는 마이크를 찾지 못했어요.",
+        network: "음성 인식 연결이 원활하지 않아요. 잠시 후 다시 시도해 주세요.",
+        "no-speech": "음성이 들리지 않았어요. 다시 말해 주세요."
+      };
+      setSpeechMessage(messages[event.error] || "음성을 인식하지 못했어요. 다시 시도해 주세요.");
+      setIsListening(false);
+      setInterimTranscript("");
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+      setInterimTranscript("");
+    };
+    recognitionRef.current = recognition;
+
+    return () => {
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
+      recognition.stop();
+      recognitionRef.current = null;
+    };
+  }, [persistAnswer]);
 
   useEffect(() => {
     questionIdRef.current = currentQuestion.id;
@@ -77,7 +171,27 @@ export function InterviewSection() {
     persistAnswer(nextAnswer, currentQuestion.id);
   }
 
+  function toggleListening() {
+    const recognition = recognitionRef.current;
+    if (!recognition) return;
+
+    if (isListening) {
+      recognition.stop();
+      return;
+    }
+
+    setSpeechMessage("");
+    setInterimTranscript("");
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch {
+      setSpeechMessage("음성 기록을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.");
+    }
+  }
+
   function move(nextIndex: number) {
+    recognitionRef.current?.stop();
     persistAnswer(answerRef.current, currentQuestion.id);
     const nextQuestion = questions[nextIndex];
     const nextSession = readInterviewSession();
@@ -89,6 +203,7 @@ export function InterviewSection() {
   }
 
   function completeInterview() {
+    recognitionRef.current?.stop();
     persistAnswer(answerRef.current, currentQuestion.id);
     const session = readInterviewSession();
 
@@ -126,7 +241,30 @@ export function InterviewSection() {
             placeholder="미래의 기억을 떠올리며 상세하게 적어주세요."
             className="ko-keep"
           />
-          <p className="mt-2 text-2xl font-medium text-black/35">{answer.length}자 / 권장 300자 이상</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant={isListening ? "default" : "ghost"}
+              onClick={toggleListening}
+              disabled={!speechSupported}
+              aria-pressed={isListening}
+              className={isListening ? "bg-red-500 text-white hover:bg-red-600" : "border border-black/20"}
+            >
+              {isListening ? <Square size={16} fill="currentColor" /> : <Mic size={18} />}
+              {isListening ? "음성 기록 중지" : "음성으로 기록하기"}
+            </Button>
+            {isListening ? (
+              <p className="flex items-center gap-2 text-sm font-semibold text-red-600" role="status">
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
+                듣고 있어요{interimTranscript ? ` · ${interimTranscript}` : "…"}
+              </p>
+            ) : null}
+          </div>
+          {!speechSupported ? (
+            <p className="mt-3 text-sm font-medium text-black/55">이 브라우저는 음성 기록을 지원하지 않아요. Chrome 또는 Edge에서 이용해 주세요.</p>
+          ) : null}
+          {speechMessage ? <p className="mt-3 text-sm font-semibold text-red-600" role="alert">{speechMessage}</p> : null}
+          <p className="mt-3 text-2xl font-medium text-black/35">{answer.length}자 / 권장 300자 이상</p>
         </div>
         <footer className="fixed bottom-0 left-0 right-0 grid gap-4 border-t hairline bg-background px-[clamp(20px,3vw,30px)] py-5 md:grid-cols-[1fr_auto_1fr] md:items-end lg:right-[360px] xl:right-[470px]">
           <div>

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { GoogleAnalyticsPageView } from "@/components/GoogleAnalytics";
 import "./globals.css";
 
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-SKBRJYW73J";
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || "G-SKBRJYW73J";
 
 export const metadata: Metadata = {
   title: {
