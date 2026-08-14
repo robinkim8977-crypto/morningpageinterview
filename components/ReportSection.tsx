@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -386,15 +386,20 @@ function MessageSection({ message }: { message: string }) {
   );
 }
 
-function ComingSoonAiSummary() {
+function FutureCoordinateInvitation() {
   return (
-    <section className="mx-auto max-w-[1080px] border-t border-black/20 px-[clamp(20px,6vw,96px)] py-12">
-      <div className="grid gap-4 rounded-lg bg-[#ECEFF0] p-6 md:grid-cols-[1fr_auto] md:items-center">
+    <section className="mx-auto max-w-[1080px] border-t border-black/20 px-[clamp(20px,6vw,96px)] py-16 md:py-24">
+      <div className="grid gap-8 bg-[#DDD2C5] p-7 md:grid-cols-[1fr_auto] md:items-end md:p-10">
         <div>
-          <p className="mb-2 text-sm font-bold text-black/50">준비 중</p>
-          <h2 className="ko-keep text-2xl font-medium tracking-[-0.04em]">AI 에디터의 한 페이지 요약</h2>
+          <p className="mb-3 text-xs font-bold tracking-[0.12em] text-black/50">PREMIUM AI ANALYSIS</p>
+          <h2 className="ko-keep text-[clamp(28px,4vw,44px)] font-medium leading-tight tracking-[-0.055em]">미래 좌표에 깃발을 세우세요</h2>
+          <p className="ko-keep mt-4 max-w-xl text-sm font-medium leading-6 text-black/60">
+            인터뷰에서 발견한 세 장면을 AI가 하나의 방향으로 연결하고, 지금부터 이어갈 30·90·365일 좌표를 제안합니다.
+          </p>
         </div>
-        <p className="ko-keep text-sm font-medium text-black/55">현재 결과 매거진 표시는 AI 호출 없이 작동합니다.</p>
+        <Button asChild size="sm" className="min-w-44">
+          <Link href="/future-coordinate">미래좌표 알아보기</Link>
+        </Button>
       </div>
     </section>
   );
@@ -418,9 +423,29 @@ function EmptyReportState() {
   );
 }
 
+function ReportLoadingState() {
+  return (
+    <main className="page-shell min-h-screen bg-background">
+      <Header />
+      <section className="grid min-h-[70vh] place-items-center px-6 text-center">
+        <div className="hourglass" aria-label="인터뷰 기록 불러오는 중" />
+      </section>
+    </main>
+  );
+}
+
 export function ReportSection() {
-  const [session] = useState(() => readInterviewSession());
-  const magazine = useMemo(() => buildMagazine(session), [session]);
+  const [session, setSession] = useState<InterviewSession | null>(null);
+  const magazine = useMemo(() => (session ? buildMagazine(session) : null), [session]);
+
+  useEffect(() => {
+    setSession(readInterviewSession());
+  }, []);
+
+  if (!magazine) {
+    return <ReportLoadingState />;
+  }
+
   const hasAnyContent =
     magazine.sections.length > 0 || magazine.hardTimeSections.length > 0 || hasAnswer(magazine.messageToPresent);
 
@@ -444,7 +469,7 @@ export function ReportSection() {
       ))}
 
       <MessageSection message={magazine.messageToPresent} />
-      <ComingSoonAiSummary />
+      <FutureCoordinateInvitation />
 
       <div className="sticky bottom-0 z-20 border-t border-black/15 bg-background/95 px-5 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-center gap-3">

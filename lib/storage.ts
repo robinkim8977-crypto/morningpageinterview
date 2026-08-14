@@ -24,7 +24,9 @@ const REPORT_STORAGE_KEYS = [
   "morning-page-analysis-note",
   "morning-page-report-draft",
   "morning-page-report-fingerprint",
-  "morning-page-pdf-report-data"
+  "morning-page-pdf-report-data",
+  "morning-page-future-coordinate-analysis",
+  "morning-page-future-coordinate-commitment"
 ] as const;
 
 export const emptySession: InterviewSession = {
@@ -36,7 +38,11 @@ export const emptySession: InterviewSession = {
 };
 
 function removeStoredSession() {
-  window.localStorage.removeItem(INTERVIEW_STORAGE_KEY);
+  try {
+    window.localStorage.removeItem(INTERVIEW_STORAGE_KEY);
+  } catch {
+    // Storage may be unavailable in private or restricted browser contexts.
+  }
 }
 
 function normalizeAnswers(value: unknown): InterviewAnswer[] {
@@ -75,12 +81,12 @@ export function readInterviewSession(): InterviewSession {
     return emptySession;
   }
 
-  const raw = window.localStorage.getItem(INTERVIEW_STORAGE_KEY);
-  if (!raw) {
-    return emptySession;
-  }
-
   try {
+    const raw = window.localStorage.getItem(INTERVIEW_STORAGE_KEY);
+    if (!raw) {
+      return emptySession;
+    }
+
     const parsed = JSON.parse(raw) as Partial<InterviewSession>;
 
     if (
@@ -105,17 +111,22 @@ export function readInterviewSession(): InterviewSession {
 }
 
 export function saveInterviewSession(session: InterviewSession) {
-  window.localStorage.setItem(
-    INTERVIEW_STORAGE_KEY,
-    JSON.stringify({
-      schemaVersion: INTERVIEW_STORAGE_VERSION,
-      questionnaireVersion: QUESTIONNAIRE_VERSION,
-      futureYear: session.futureYear,
-      name: session.name,
-      answers: normalizeAnswers(session.answers),
-      completedAt: session.completedAt
-    })
-  );
+  try {
+    window.localStorage.setItem(
+      INTERVIEW_STORAGE_KEY,
+      JSON.stringify({
+        schemaVersion: INTERVIEW_STORAGE_VERSION,
+        questionnaireVersion: QUESTIONNAIRE_VERSION,
+        futureYear: session.futureYear,
+        name: session.name,
+        answers: normalizeAnswers(session.answers),
+        completedAt: session.completedAt
+      })
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function clearReportStorage() {
@@ -124,8 +135,12 @@ export function clearReportStorage() {
   }
 
   REPORT_STORAGE_KEYS.forEach((key) => {
-    window.localStorage.removeItem(key);
-    window.sessionStorage.removeItem(key);
+    try {
+      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
+    } catch {
+      // Continue clearing any storage that remains available.
+    }
   });
 }
 
@@ -135,12 +150,12 @@ export function resetInterviewState() {
   }
 
   clearReportStorage();
-  window.localStorage.setItem(INTERVIEW_STORAGE_KEY, JSON.stringify(emptySession));
+  saveInterviewSession(emptySession);
 }
 
 export function startNewInterviewSession(session: InterviewSession) {
   clearReportStorage();
-  saveInterviewSession({
+  return saveInterviewSession({
     schemaVersion: INTERVIEW_STORAGE_VERSION,
     questionnaireVersion: QUESTIONNAIRE_VERSION,
     futureYear: session.futureYear,

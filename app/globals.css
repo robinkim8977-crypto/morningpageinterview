@@ -30,6 +30,8 @@ body {
   color: #111111;
   font-family: var(--font-pretendard), Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
   letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -45,6 +47,144 @@ textarea {
 
 img {
   display: block;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  body,
+  :root {
+    background: #ffffff !important;
+    margin: 0 !important;
+  }
+
+  .future-coordinate-page header,
+  .future-coordinate-actions,
+  .future-coordinate-page button,
+  .site-footer {
+    display: none !important;
+  }
+
+  .future-coordinate-page {
+    width: 100%;
+    max-width: none;
+    background: #ffffff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .future-coordinate-sheet {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    padding: 16mm 15mm !important;
+    break-before: page;
+    break-after: page;
+    break-inside: avoid;
+    overflow: visible !important;
+  }
+
+  .future-coordinate-page .future-coordinate-sheet:first-of-type {
+    break-before: auto;
+  }
+
+  .future-coordinate-sheet img {
+    max-height: 245mm !important;
+  }
+
+  .future-coordinate-scene-sheet {
+    display: flex !important;
+    flex-direction: column;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    padding: 13mm 13mm !important;
+  }
+
+  .future-coordinate-scene-sheet .future-coordinate-chapter-intro {
+    flex: 0 0 auto;
+    margin-bottom: 7mm !important;
+  }
+
+  .future-coordinate-scene-sheet .future-coordinate-chapter-intro h2 {
+    margin-top: 2mm !important;
+    font-size: 23px !important;
+  }
+
+  .future-coordinate-scene-sheet .future-coordinate-chapter-intro p:last-child {
+    margin-top: 2mm !important;
+    font-size: 10px !important;
+    line-height: 1.5 !important;
+  }
+
+  .future-coordinate-scene-layout {
+    display: grid !important;
+    grid-template-columns: 42% 58% !important;
+    align-items: center !important;
+    gap: 0 !important;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .future-coordinate-scene-image {
+    order: 1 !important;
+    align-self: stretch;
+    padding-right: 9mm;
+  }
+
+  .future-coordinate-scene-image img {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    object-fit: cover !important;
+  }
+
+  .future-coordinate-scene-copy {
+    order: 2 !important;
+    min-width: 0;
+  }
+
+  .future-coordinate-scene-copy h2 {
+    margin-top: 3mm !important;
+    font-size: 29px !important;
+    line-height: 1.08 !important;
+  }
+
+  .future-coordinate-scene-copy > div:nth-of-type(1) {
+    margin-top: 5mm !important;
+    font-size: 11px !important;
+    line-height: 1.55 !important;
+  }
+
+  .future-coordinate-scene-copy blockquote {
+    margin-top: 6mm !important;
+    padding: 5mm 0 !important;
+    font-size: 18px !important;
+    line-height: 1.35 !important;
+  }
+
+  .future-coordinate-scene-copy > div:nth-of-type(2) {
+    margin-top: 6mm !important;
+    gap: 5mm !important;
+  }
+
+  .future-coordinate-scene-copy > div:nth-of-type(2) p:last-child {
+    margin-top: 2mm !important;
+    font-size: 10px !important;
+    line-height: 1.5 !important;
+  }
+
+  .future-coordinate-scene-copy > div:last-child {
+    margin-top: 5mm !important;
+  }
+
+  .future-coordinate-action-textarea {
+    height: auto !important;
+    min-height: 24mm !important;
+    overflow: visible !important;
+    white-space: pre-wrap !important;
+  }
 }
 
 .page-shell {

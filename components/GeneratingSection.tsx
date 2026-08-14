@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -8,14 +8,7 @@ import { Button } from "@/components/ui/button";
 const MIN_GENERATING_DELAY_MS = 1200;
 
 export function GeneratingSection() {
-  const startedRef = useRef(false);
-
   useEffect(() => {
-    if (startedRef.current) {
-      return;
-    }
-
-    startedRef.current = true;
     const timeoutId = window.setTimeout(() => {
       window.location.replace("/report");
     }, MIN_GENERATING_DELAY_MS);
@@ -27,11 +20,6 @@ export function GeneratingSection() {
 
   return (
     <main className="page-shell min-h-screen bg-background">
-      <script
-        dangerouslySetInnerHTML={{
-          __html: "window.setTimeout(function(){ window.location.replace('/report'); }, 1200);"
-        }}
-      />
       <Header />
       <section className="grid min-h-[calc(100vh-92px)] place-items-center px-6 text-center">
         <div className="grid justify-items-center">

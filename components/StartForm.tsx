@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -13,10 +13,16 @@ const yearOptions = [1, 3, 5, 10];
 
 export function StartForm() {
   const router = useRouter();
-  const [futureYear, setFutureYear] = useState<number | "custom">(() => readInterviewSession().futureYear || 0);
+  const [futureYear, setFutureYear] = useState<number | "custom">(0);
   const [customYear, setCustomYear] = useState("");
-  const [name, setName] = useState(() => readInterviewSession().name || "");
+  const [name, setName] = useState("");
   const [errors, setErrors] = useState<{ year?: string; name?: string }>({});
+
+  useEffect(() => {
+    const stored = readInterviewSession();
+    setFutureYear(stored.futureYear || 0);
+    setName(stored.name || "");
+  }, []);
 
   const selectedYear = futureYear === "custom" ? Number(customYear) : futureYear;
 
@@ -31,11 +37,15 @@ export function StartForm() {
       return;
     }
 
-    startNewInterviewSession({
+    const saved = startNewInterviewSession({
       futureYear: selectedYear,
       name: name.trim(),
       answers: []
     });
+    if (!saved) {
+      setErrors({ name: "브라우저에 인터뷰를 저장하지 못했습니다. 일반 브라우저 창에서 다시 시도해 주세요." });
+      return;
+    }
     router.push("/interview");
   }
 

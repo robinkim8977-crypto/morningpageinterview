@@ -108,6 +108,37 @@ export function LandingSection() {
         </div>
       </section>
 
+      <section className="grid gap-10 border-y hairline bg-[#DDD2C5] px-[clamp(20px,5vw,72px)] py-16 md:grid-cols-[0.82fr_1.18fr] md:items-center md:py-24">
+        <Image
+          src="/images/future-coordinate-scene-water-light.png"
+          alt="잔잔한 물결 위로 비치는 빛"
+          width={498}
+          height={814}
+          quality={95}
+          className="h-[460px] w-full object-cover md:h-[600px]"
+        />
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-xs font-bold tracking-[0.14em] text-black/45">PREMIUM AI REPORT</p>
+            <span className="rounded-full bg-black px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-white">COMING SOON</span>
+          </div>
+          <h2 className="ko-keep mt-5 text-[clamp(36px,5vw,64px)] font-medium leading-[1.03] tracking-[-0.065em]">
+            미래의 여러 장면에서
+            <br />
+            하나의 방향을 발견합니다
+          </h2>
+          <p className="ko-keep mt-7 max-w-xl text-base font-medium leading-8 text-black/62">
+            미래좌표는 인터뷰 속 세 장면을 연결해 30일의 발견, 90일의 실험, 365일의 축적과 72시간 안의 첫 행동을 제안하는 개인화 AI 리포트입니다.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Button asChild size="sm">
+              <Link href="/future-coordinate">미래좌표 알아보기 <ArrowRight size={14} /></Link>
+            </Button>
+            <p className="text-sm font-semibold">1회 결제 2,900원 · 정기결제 없음</p>
+          </div>
+        </div>
+      </section>
+
       <section className="relative my-10">
         <Image src="/images/home-why.png" alt="미래를 바라보는 라운지" width={1792} height={1024} className="h-[430px] w-full object-cover" />
         <div className="absolute inset-0 grid place-items-center bg-black/5 text-center text-white">

@@ -60,6 +60,7 @@ export function InterviewSection() {
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
   const [speechMessage, setSpeechMessage] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
   const answerRef = useRef("");
   const questionIdRef = useRef<number>(questions[0].id);
@@ -72,12 +73,29 @@ export function InterviewSection() {
     const session = readInterviewSession();
     const otherAnswers = session.answers.filter((item) => item.questionId !== questionId);
 
-    saveInterviewSession({
+    const saved = saveInterviewSession({
       ...session,
       answers: [...otherAnswers, { questionId, answer: nextAnswer }].sort((a, b) => a.questionId - b.questionId)
     });
-    setLastSavedAt("방금 전");
+    if (saved) {
+      setLastSavedAt("방금 전");
+      setSaveMessage("");
+    } else {
+      setSaveMessage("답변을 브라우저에 저장하지 못했습니다. 이 탭을 닫지 말고 일반 브라우저 창에서 다시 시도해 주세요.");
+    }
   }, []);
+
+  const stopListening = useCallback(() => {
+    const recognition = recognitionRef.current;
+    if (!recognition || !isListening) return;
+    stopRequestedRef.current = true;
+    try {
+      recognition.stop();
+    } catch {
+      setIsListening(false);
+      setInterimTranscript("");
+    }
+  }, [isListening]);
 
   useEffect(() => {
     const speechWindow = window as typeof window & {
@@ -150,7 +168,11 @@ export function InterviewSection() {
       recognition.onresult = null;
       recognition.onerror = null;
       recognition.onend = null;
-      recognition.abort();
+      try {
+        recognition.abort();
+      } catch {
+        // Some browsers throw when recognition never started.
+      }
       recognitionRef.current = null;
     };
   }, [persistAnswer]);
@@ -213,8 +235,7 @@ export function InterviewSection() {
   }
 
   function move(nextIndex: number) {
-    stopRequestedRef.current = true;
-    recognitionRef.current?.stop();
+    stopListening();
     persistAnswer(answerRef.current, currentQuestion.id);
     const nextQuestion = questions[nextIndex];
     const nextSession = readInterviewSession();
@@ -226,16 +247,19 @@ export function InterviewSection() {
   }
 
   function completeInterview() {
-    stopRequestedRef.current = true;
-    recognitionRef.current?.stop();
+    stopListening();
     persistAnswer(answerRef.current, currentQuestion.id);
     const session = readInterviewSession();
 
-    saveInterviewSession({
+    const saved = saveInterviewSession({
       ...session,
       completedAt: new Date().toISOString()
     });
-    router.push("/report");
+    if (!saved) {
+      setSaveMessage("마지막 답변을 저장하지 못했습니다. 이 탭을 유지한 채 다시 시도해 주세요.");
+      return;
+    }
+    router.push("/generating");
   }
 
   return (
@@ -290,6 +314,7 @@ export function InterviewSection() {
             <p className="mt-3 text-sm font-semibold text-red-600" role="alert">{speechUnavailableMessage}</p>
           ) : null}
           {speechMessage ? <p className="mt-3 text-sm font-semibold text-red-600" role="alert">{speechMessage}</p> : null}
+          {saveMessage ? <p className="mt-3 text-sm font-semibold text-red-700" role="alert">{saveMessage}</p> : null}
           <p className="mt-3 text-2xl font-medium text-black/35">{answer.length}자 / 권장 300자 이상</p>
         </div>
         <footer className="fixed bottom-0 left-0 right-0 grid gap-4 border-t hairline bg-background px-[clamp(20px,3vw,30px)] pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 md:grid-cols-[1fr_auto_1fr] md:items-end lg:right-[360px] xl:right-[470px]">
