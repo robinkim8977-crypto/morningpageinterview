@@ -64,7 +64,8 @@ export function FutureCoordinatePurchase() {
     setIsPaying(true);
     setMessage("");
     const session = readInterviewSession();
-    const paymentId = `future-coordinate-${crypto.randomUUID()}`;
+    // KCP V2 limits order/payment identifiers to 40 characters.
+    const paymentId = `fc-${crypto.randomUUID()}`;
 
     try {
       const response = await PortOne.requestPayment({
