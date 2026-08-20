@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { Header } from "@/components/Header";
+import { FutureCoordinatePurchase } from "@/components/FutureCoordinatePurchase";
 import { Button } from "@/components/ui/button";
 
 const deliverables = [
@@ -39,7 +40,7 @@ export function FutureCoordinateProductSection() {
         <div className="order-1 md:order-2 md:pl-2">
           <div className="mb-6 flex flex-wrap items-center gap-3">
             <p className="text-xs font-bold tracking-[0.16em] text-black/48">PREMIUM AI REPORT</p>
-            <span className="rounded-full bg-black px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-white">COMING SOON</span>
+            <span className="rounded-full bg-black px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-white">1회 결제 · 2,900원</span>
           </div>
           <h1 className="ko-keep text-[clamp(46px,6vw,82px)] font-medium leading-[0.98] tracking-[-0.075em]">
             미래와 현재 사이의
@@ -58,16 +59,14 @@ export function FutureCoordinateProductSection() {
             <p className="ko-keep max-w-md text-xs leading-5 text-black/48">정기결제 없이 한 번만 결제합니다. 결제 완료 후 입력한 인터뷰 답변을 바탕으로 개인화 리포트 생성이 시작됩니다.</p>
           </div>
           <div className="mt-9 flex flex-wrap items-center gap-3">
-            <Button type="button" size="sm" className="min-w-52 cursor-not-allowed opacity-55" disabled>
-              결제 준비 중 · COMING SOON
-            </Button>
+            <Button asChild size="sm" className="min-w-52"><a href="#purchase">구매 안내 확인하기 <ArrowRight size={14} /></a></Button>
             {showLocalPreview ? (
               <Button asChild size="sm" variant="outline" className="min-w-52">
                 <Link href="/future-coordinate/result?preview=1">로컬 결과 미리보기 <ArrowRight size={14} /></Link>
               </Button>
             ) : null}
           </div>
-          <p className="ko-keep mt-4 text-xs leading-5 text-black/44">현재 결제 시스템을 준비하고 있습니다. 결제 기능이 열리기 전에는 비용이 청구되지 않습니다.</p>
+          <p className="ko-keep mt-4 text-xs leading-5 text-black/44">결제는 한 번만 진행되며, 결제와 인터뷰가 모두 완료되면 개인화 리포트 생성이 시작됩니다.</p>
         </div>
       </section>
 
@@ -138,15 +137,14 @@ export function FutureCoordinateProductSection() {
         </div>
       </section>
 
-      <section className="px-[clamp(20px,6vw,86px)] py-20 text-center md:py-28">
-        <p className="text-xs font-bold tracking-[0.16em] text-black/42">LAUNCH PREPARATION</p>
-        <h2 className="ko-keep mx-auto mt-4 max-w-3xl text-[clamp(34px,4.5vw,58px)] font-medium leading-[1.08] tracking-[-0.06em]">미래좌표 결제를 준비하고 있습니다</h2>
-        <p className="ko-keep mx-auto mt-6 max-w-xl text-sm leading-7 text-black/56 md:text-base">전자결제 심사와 최종 안전성 점검이 끝나면 2,900원 1회 결제로 이용할 수 있습니다.</p>
-        <div className="mt-9 flex flex-wrap justify-center gap-3">
-          <Button type="button" size="sm" className="min-w-52 cursor-not-allowed opacity-55" disabled>결제 준비 중</Button>
-          <Button asChild size="sm" variant="outline" className="min-w-52"><Link href="/start">무료 인터뷰 시작하기 <ArrowRight size={14} /></Link></Button>
-        </div>
+      <section id="purchase" className="scroll-mt-8 px-[clamp(20px,6vw,86px)] py-20 text-center md:py-28">
+        <p className="text-xs font-bold tracking-[0.16em] text-black/42">ONE-TIME PURCHASE</p>
+        <h2 className="ko-keep mx-auto mt-4 max-w-3xl text-[clamp(34px,4.5vw,58px)] font-medium leading-[1.08] tracking-[-0.06em]">미래와 현재 사이의 다음 한 걸음을 만나보세요</h2>
+        <p className="ko-keep mx-auto mt-6 max-w-xl text-sm leading-7 text-black/56 md:text-base">2,900원 1회 결제로 이용합니다. 인터뷰를 아직 완료하지 않았다면 결제 후 인터뷰를 이어갈 수 있습니다.</p>
+        <div className="mt-9"><FutureCoordinatePurchase /></div>
+        <div className="mt-8"><Button asChild size="sm" variant="outline" className="min-w-52"><Link href="/start">무료 인터뷰 시작하기 <ArrowRight size={14} /></Link></Button></div>
         <div className="mt-7 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs font-semibold text-black/48">
+          <Link href="/terms">이용약관</Link>
           <Link href="/privacy">개인정보처리방침</Link>
           <Link href="/refund-policy">결제·취소·환불 정책</Link>
         </div>

@@ -120,7 +120,7 @@ export function LandingSection() {
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-xs font-bold tracking-[0.14em] text-black/45">PREMIUM AI REPORT</p>
-            <span className="rounded-full bg-black px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-white">COMING SOON</span>
+            <span className="rounded-full bg-black px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-white">PREMIUM REPORT</span>
           </div>
           <h2 className="ko-keep mt-5 text-[clamp(36px,5vw,64px)] font-medium leading-[1.03] tracking-[-0.065em]">
             미래의 여러 장면에서

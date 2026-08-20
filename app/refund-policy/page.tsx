@@ -11,7 +11,7 @@ const sections: LegalSection[] = [
     title: "유료서비스의 내용",
     content: (
       <div className="space-y-2">
-        <p><strong>상품명</strong> 미래좌표 리포트</p><p><strong>판매가격</strong> 2,900원</p><p><strong>결제방식</strong> 1회 결제</p><p><strong>정기결제</strong> 없음</p><p><strong>제공방식</strong> 결제 완료 후 인터뷰 답변을 AI가 분석하여 생성한 개인화 리포트를 웹에서 제공</p>
+        <p><strong>상품명</strong> 미래좌표 리포트</p><p><strong>판매가격</strong> 2,900원</p><p><strong>결제방식</strong> 신용카드 일반결제 및 지원되는 간편결제에 의한 1회 결제</p><p><strong>정기결제</strong> 없음</p><p><strong>제공방식</strong> 결제 확인과 인터뷰 완료 후 답변을 AI가 분석하여 생성한 개인화 리포트를 웹에서 즉시 제공</p><p><strong>이용환경</strong> 결과는 현재 브라우저에 저장되므로 생성 후 PDF 저장을 권장</p>
       </div>
     )
   },
@@ -21,7 +21,7 @@ const sections: LegalSection[] = [
   },
   {
     title: "서비스 제공",
-    content: <p>미래좌표 리포트는 결제 완료 후 이용자가 작성한 인터뷰 답변을 바탕으로 생성됩니다. AI 또는 시스템 처리 상황에 따라 생성에 일정 시간이 소요될 수 있습니다. 회사의 시스템 오류로 정상적인 생성이 이루어지지 않으면 재생성을 우선 지원하며, 합리적인 시간 안에 제공할 수 없는 경우 결제 취소 또는 환불을 진행합니다.</p>
+    content: <p>미래좌표 리포트는 결제 확인과 인터뷰 완료 후 이용자가 작성한 답변을 바탕으로 생성됩니다. 일반적으로 결제 확인 직후 생성이 시작되지만 AI 또는 시스템 처리 상황에 따라 수 분 이상 소요될 수 있습니다. 회사의 시스템 오류로 정상적인 생성이 이루어지지 않으면 재생성을 우선 지원하며, 합리적인 시간 안에 제공할 수 없는 경우 결제 취소 또는 환불을 진행합니다.</p>
   },
   {
     title: "AI 생성 콘텐츠의 특성",
@@ -29,7 +29,7 @@ const sections: LegalSection[] = [
   },
   {
     title: "청약철회",
-    content: <p>이용자는 관계 법령이 정하는 범위에서 청약철회를 할 수 있습니다. 미래좌표 리포트는 이용자의 답변을 기반으로 개인화되어 생성되는 디지털 콘텐츠이며 결제 완료 후 콘텐츠 제작과 제공이 개시됩니다. 제공이 개시된 이후에는 관계 법령에 따라 단순 변심 청약철회가 제한될 수 있습니다. 회사는 결제 전에 이 사실과 리포트의 주요 구성 및 예시를 안내합니다.</p>
+    content: <p>이용자는 관계 법령이 정하는 범위에서 청약철회를 할 수 있습니다. 미래좌표 리포트는 이용자의 답변을 기반으로 개인화되어 생성되는 디지털 콘텐츠이며, 이용자가 결제 화면에서 콘텐츠 제작·제공 개시에 동의하고 결제를 완료하면 생성이 시작됩니다. 콘텐츠 제공이 개시된 이후에는 관계 법령에 따라 단순 변심 청약철회가 제한될 수 있습니다. 결제 전 리포트의 주요 구성과 예시, 이 제한 내용을 확인할 수 있습니다.</p>
   },
   {
     title: "취소·재생성 또는 환불을 요청할 수 있는 경우",
@@ -67,7 +67,7 @@ const sections: LegalSection[] = [
     title: "문의",
     content: (
       <div className="space-y-1">
-        <p><strong>상호</strong> 로웬스테이션</p><p><strong>대표자</strong> 김소윤</p><p><strong>사업자등록번호</strong> 254-08-03629</p><p><strong>통신판매업 신고번호</strong> 2026-강원춘천-0587</p><p><strong>사업장 주소</strong> 강원도 춘천시 서부대성로 327</p><p><strong>전화번호</strong> <a className="underline underline-offset-4" href="tel:01029677107">010-2967-7107</a></p><p><strong>고객문의</strong> <a className="underline underline-offset-4" href="mailto:morningpageinterview@gmail.com">morningpageinterview@gmail.com</a></p><p><strong>시행일</strong> 2026년 8월 15일</p>
+        <p><strong>상호</strong> 로웬스테이션</p><p><strong>대표자</strong> 김소윤</p><p><strong>사업자등록번호</strong> 254-08-03629</p><p><strong>통신판매업 신고번호</strong> 2026-강원춘천-0587</p><p><strong>사업장 주소</strong> 강원도 춘천시 서부대성로 327</p><p><strong>전화번호</strong> <a className="underline underline-offset-4" href="tel:07080274816">070-8027-4816</a></p><p><strong>고객문의</strong> <a className="underline underline-offset-4" href="mailto:morningpageinterview@gmail.com">morningpageinterview@gmail.com</a></p><p><strong>시행일</strong> 2026년 8월 15일</p>
       </div>
     )
   }

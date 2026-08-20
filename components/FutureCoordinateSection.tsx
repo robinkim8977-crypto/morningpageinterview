@@ -14,6 +14,7 @@ import {
   FUTURE_COORDINATE_COMMITMENT_KEY,
   isFutureCoordinateAnalysis
 } from "@/lib/future-coordinate";
+import { readPaymentReceipt } from "@/lib/payment";
 import { readInterviewSession } from "@/lib/storage";
 import type { FutureCoordinateAnalysis, FuturePlan, FutureScene, InterviewSession } from "@/lib/types";
 
@@ -274,6 +275,8 @@ export function FutureCoordinateSection() {
   const [error, setError] = useState("");
   const [requestIndex, setRequestIndex] = useState(0);
   const [isPreview, setIsPreview] = useState(false);
+  const [paymentId, setPaymentId] = useState("");
+  const [paymentChecked, setPaymentChecked] = useState(false);
   const [commitment, setCommitment] = useState<Commitment>({ fingerprint: "", action: "", date: "", duration: "" });
   const [saved, setSaved] = useState(false);
   const fingerprint = useMemo(() => (session ? sessionFingerprint(session) : ""), [session]);
@@ -284,11 +287,18 @@ export function FutureCoordinateSection() {
     const localPreview = process.env.NODE_ENV === "development" && new URLSearchParams(window.location.search).get("preview") === "1";
     setIsPreview(localPreview);
     setSession(localPreview ? createLocalPreviewSession() : storedSession);
+    setPaymentId(readPaymentReceipt()?.paymentId || "");
+    setPaymentChecked(true);
   }, []);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || !paymentChecked) return;
     if (!hasAnswers) { setLoading(false); return; }
+    if (process.env.NODE_ENV !== "development" && !paymentId) {
+      setError("결제 확인 후 미래좌표 리포트를 만들 수 있습니다.");
+      setLoading(false);
+      return;
+    }
 
     const cached = readCachedAnalysis(fingerprint);
     if (cached && requestIndex === 0) {
@@ -305,7 +315,7 @@ export function FutureCoordinateSection() {
     fetch("/api/report", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session, preview: isPreview }),
+      body: JSON.stringify({ session, preview: isPreview, paymentId }),
       signal: controller.signal
     })
       .then(async (response) => {
@@ -326,7 +336,7 @@ export function FutureCoordinateSection() {
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, [fingerprint, hasAnswers, isPreview, requestIndex, session]);
+  }, [fingerprint, hasAnswers, isPreview, paymentChecked, paymentId, requestIndex, session]);
 
   function savePromise() {
     if (!commitment.action.trim() || !commitment.duration.trim()) return;

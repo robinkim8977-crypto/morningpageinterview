@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { questions } from "@/data/questions";
 import { createPreviewAnalysis, isFutureCoordinateAnalysis } from "@/lib/future-coordinate";
+import { verifyFutureCoordinatePayment } from "@/lib/portone";
 import type { InterviewSession } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -122,7 +123,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "INVALID_JSON" }, { status: 400 });
   }
 
-  const requestBody = body as { session?: unknown; preview?: unknown };
+  const requestBody = body as { session?: unknown; preview?: unknown; paymentId?: unknown };
   const session = parseSession(requestBody.session);
   if (!session) {
     return NextResponse.json({ error: "INTERVIEW_REQUIRED", message: "분석할 인터뷰 답변이 없습니다." }, { status: 400 });
@@ -138,6 +139,23 @@ export async function POST(request: Request) {
       { error: "AI_REPORT_NOT_AVAILABLE", message: "미래좌표 결제와 분석 기능을 준비하고 있습니다." },
       { status: 403 }
     );
+  }
+
+  if (process.env.NODE_ENV !== "development") {
+    if (typeof requestBody.paymentId !== "string" || !requestBody.paymentId) {
+      return NextResponse.json(
+        { error: "PAYMENT_REQUIRED", message: "결제 확인 후 미래좌표 리포트를 만들 수 있습니다." },
+        { status: 402 }
+      );
+    }
+    try {
+      await verifyFutureCoordinatePayment(requestBody.paymentId);
+    } catch {
+      return NextResponse.json(
+        { error: "PAYMENT_NOT_VERIFIED", message: "결제 승인 상태를 확인하지 못했습니다. 고객센터로 문의해 주세요." },
+        { status: 402 }
+      );
+    }
   }
 
   const apiKey = process.env.OPENAI_API_KEY?.trim();

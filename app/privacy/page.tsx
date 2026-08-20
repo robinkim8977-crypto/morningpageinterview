@@ -73,7 +73,7 @@ const sections: LegalSection[] = [
     title: "개인정보 처리업무의 위탁",
     content: (
       <>
-        <p>회사는 서비스 제공을 위해 다음 업체의 서비스를 이용하거나 도입을 준비하고 있습니다. 결제 서비스가 시작되면 실제 계약한 결제대행사를 기준으로 관련 내용을 갱신합니다.</p>
+        <p>회사는 서비스 제공을 위해 다음 업체에 개인정보 처리업무의 일부를 위탁합니다.</p>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[620px] border-collapse text-left text-sm">
             <thead><tr className="border-y border-black/25"><th className="py-3 pr-4">업체</th><th className="py-3 pr-4">업무</th><th className="py-3">현재 상태</th></tr></thead>
@@ -81,7 +81,7 @@ const sections: LegalSection[] = [
               <tr className="border-b border-black/15"><td className="py-3 pr-4">Vercel</td><td className="py-3 pr-4">웹사이트 호스팅 및 서비스 운영</td><td className="py-3">사용 중</td></tr>
               <tr className="border-b border-black/15"><td className="py-3 pr-4">OpenAI</td><td className="py-3 pr-4">인터뷰 답변 분석 및 AI 리포트 생성</td><td className="py-3">사용 중</td></tr>
               <tr className="border-b border-black/15"><td className="py-3 pr-4">Google</td><td className="py-3 pr-4">Google Analytics 4를 통한 이용 통계 분석</td><td className="py-3">사용 중</td></tr>
-              <tr><td className="py-3 pr-4">PortOne 및 계약 PG사</td><td className="py-3 pr-4">결제 승인·조회·취소·환불</td><td className="py-3">도입 준비 중</td></tr>
+              <tr><td className="py-3 pr-4">PortOne 및 NHN KCP</td><td className="py-3 pr-4">결제 승인·조회·취소·환불</td><td className="py-3">연동 완료</td></tr>
             </tbody>
           </table>
         </div>
@@ -90,7 +90,22 @@ const sections: LegalSection[] = [
   },
   {
     title: "개인정보의 국외 이전",
-    content: <p>회사가 이용하는 AI, 분석 또는 클라우드 제공업체의 서버가 해외에 위치하여 개인정보의 국외 이전이 발생할 수 있습니다. 회사는 실제 계약과 설정을 기준으로 이전 항목, 국가, 시점·방법, 이전받는 자, 목적 및 보유기간을 공개하고 관계 법령에 따른 절차를 진행합니다.</p>
+    content: (
+      <>
+        <p>AI 분석, 웹사이트 호스팅 및 이용 통계 제공 과정에서 개인정보의 국외 이전이 발생할 수 있습니다.</p>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+            <thead><tr className="border-y border-black/25"><th className="py-3 pr-4">이전받는 자</th><th className="py-3 pr-4">이전 항목·목적</th><th className="py-3 pr-4">이전 국가·방법</th><th className="py-3">보유기간</th></tr></thead>
+            <tbody>
+              <tr className="border-b border-black/15"><td className="py-3 pr-4">OpenAI OpCo, LLC</td><td className="py-3 pr-4">이름, 미래 시점, 인터뷰 답변의 AI 분석</td><td className="py-3 pr-4">미국 등 처리시설 소재국으로 네트워크 전송</td><td className="py-3">서비스 제공업체 정책 및 계약에서 정한 기간</td></tr>
+              <tr className="border-b border-black/15"><td className="py-3 pr-4">Vercel Inc.</td><td className="py-3 pr-4">접속 기록과 서비스 운영에 필요한 기술정보</td><td className="py-3 pr-4">미국 등 처리시설 소재국으로 네트워크 전송</td><td className="py-3">서비스 제공업체 정책 및 계약에서 정한 기간</td></tr>
+              <tr><td className="py-3 pr-4">Google LLC</td><td className="py-3 pr-4">쿠키, 기기·브라우저 정보와 이용 기록의 통계 분석</td><td className="py-3 pr-4">미국 등 Google 처리시설 소재국으로 네트워크 전송</td><td className="py-3">Google Analytics 설정 및 정책에서 정한 기간</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>이용자는 서비스 이용을 중단함으로써 국외 이전을 거부할 수 있습니다. 다만 AI 분석에 필요한 이전을 거부하면 미래좌표 리포트 생성이 제한될 수 있습니다.</p>
+      </>
+    )
   },
   {
     title: "개인정보의 파기",
@@ -117,7 +132,7 @@ const sections: LegalSection[] = [
     title: "개인정보 보호책임자 및 문의",
     content: (
       <div className="space-y-1">
-        <p><strong>상호</strong> 로웬스테이션</p><p><strong>대표자</strong> 김소윤</p><p><strong>사업자등록번호</strong> 254-08-03629</p><p><strong>통신판매업 신고번호</strong> 2026-강원춘천-0587</p><p><strong>사업장 주소</strong> 강원도 춘천시 서부대성로 327</p><p><strong>전화번호</strong> <a className="underline underline-offset-4" href="tel:01029677107">010-2967-7107</a></p><p><strong>이메일</strong> <a className="underline underline-offset-4" href="mailto:morningpageinterview@gmail.com">morningpageinterview@gmail.com</a></p>
+        <p><strong>상호</strong> 로웬스테이션</p><p><strong>대표자</strong> 김소윤</p><p><strong>사업자등록번호</strong> 254-08-03629</p><p><strong>통신판매업 신고번호</strong> 2026-강원춘천-0587</p><p><strong>사업장 주소</strong> 강원도 춘천시 서부대성로 327</p><p><strong>전화번호</strong> <a className="underline underline-offset-4" href="tel:07080274816">070-8027-4816</a></p><p><strong>이메일</strong> <a className="underline underline-offset-4" href="mailto:morningpageinterview@gmail.com">morningpageinterview@gmail.com</a></p>
       </div>
     )
   },
