@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { questions } from "@/data/questions";
 import { createPreviewAnalysis, isFutureCoordinateAnalysis } from "@/lib/future-coordinate";
+import {
+  configuredPaymentUsageLedger,
+  PaymentLedgerError,
+  type PaymentUsageReservation
+} from "@/lib/payment-ledger";
+import { FUTURE_COORDINATE_PRODUCT_CODE } from "@/lib/payment";
 import { verifyFutureCoordinatePayment } from "@/lib/portone";
 import type { InterviewSession } from "@/lib/types";
 
@@ -115,6 +121,35 @@ function getOutputText(response: unknown) {
     .join("");
 }
 
+type PaymentUsageContext = {
+  ledger: ReturnType<typeof configuredPaymentUsageLedger>;
+  reservation: PaymentUsageReservation;
+};
+
+async function settlePaymentUsage(
+  context: PaymentUsageContext | null,
+  outcome: "completed" | "failed",
+  errorCode?: string
+) {
+  if (!context) return;
+
+  try {
+    const updated = outcome === "completed"
+      ? await context.ledger.complete(context.reservation)
+      : await context.ledger.fail(context.reservation, errorCode || "UNKNOWN_FAILURE");
+    if (!updated) {
+      console.error("Payment usage record was not updated", {
+        outcome,
+        attemptId: context.reservation.record.attemptId
+      });
+    }
+  } catch (error) {
+    // A processing record still blocks another paid AI call. Return a valid
+    // report when one exists, and leave uncertain failures for manual review.
+    console.error("Payment usage settlement failed", error);
+  }
+}
+
 export async function POST(request: Request) {
   let body: unknown;
   try {
@@ -141,7 +176,20 @@ export async function POST(request: Request) {
     );
   }
 
-  if (process.env.NODE_ENV !== "development") {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "AI_NOT_CONFIGURED", message: "AI 분석 연결이 아직 설정되지 않았습니다." },
+      { status: 503 }
+    );
+  }
+
+  const model = process.env.OPENAI_MODEL?.trim() || "gpt-5.6-terra";
+  const paymentProtectionRequired = process.env.NODE_ENV !== "development"
+    || process.env.PAYMENT_LEDGER_ENFORCED === "true";
+  let paymentUsage: PaymentUsageContext | null = null;
+
+  if (paymentProtectionRequired) {
     if (typeof requestBody.paymentId !== "string" || !requestBody.paymentId) {
       return NextResponse.json(
         { error: "PAYMENT_REQUIRED", message: "결제 확인 후 미래좌표 리포트를 만들 수 있습니다." },
@@ -156,17 +204,33 @@ export async function POST(request: Request) {
         { status: 402 }
       );
     }
+
+    try {
+      const ledger = configuredPaymentUsageLedger();
+      const reservation = await ledger.reserve({
+        paymentId: requestBody.paymentId,
+        productCode: FUTURE_COORDINATE_PRODUCT_CODE,
+        session
+      });
+      paymentUsage = { ledger, reservation };
+    } catch (error) {
+      if (error instanceof PaymentLedgerError) {
+        return NextResponse.json(
+          { error: error.code, message: error.message },
+          { status: error.status }
+        );
+      }
+      console.error("Payment usage protection failed", error);
+      return NextResponse.json(
+        {
+          error: "PAYMENT_LEDGER_UNAVAILABLE",
+          message: "결제 사용 기록을 확인하지 못했습니다. 비용 보호를 위해 AI 분석을 시작하지 않았습니다."
+        },
+        { status: 503 }
+      );
+    }
   }
 
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "AI_NOT_CONFIGURED", message: "AI 분석 연결이 아직 설정되지 않았습니다." },
-      { status: 503 }
-    );
-  }
-
-  const model = process.env.OPENAI_MODEL?.trim() || "gpt-5.6-terra";
   const interview = session.answers
     .map((answer) => {
       const question = questions.find((item) => item.id === answer.questionId);
@@ -254,7 +318,14 @@ export async function POST(request: Request) {
     if (!response.ok) {
       const detail = await response.text();
       console.error("OpenAI report request failed", response.status, detail.slice(0, 500));
-      return NextResponse.json({ error: "AI_REQUEST_FAILED", message: "AI 분석을 완료하지 못했습니다." }, { status: 502 });
+      await settlePaymentUsage(paymentUsage, "failed", `OPENAI_HTTP_${response.status}`);
+      return NextResponse.json(
+        {
+          error: "AI_REQUEST_FAILED",
+          message: "AI 분석을 완료하지 못했습니다. 자동 재호출을 멈췄으니 고객센터로 문의해 주세요."
+        },
+        { status: 502 }
+      );
     }
 
     const payload = (await response.json()) as {
@@ -267,7 +338,7 @@ export async function POST(request: Request) {
       throw new Error("Invalid future-coordinate response shape");
     }
 
-    return NextResponse.json({
+    const report = {
       ...parsed,
       mode: "ai",
       generatedAt: new Date().toISOString(),
@@ -277,9 +348,19 @@ export async function POST(request: Request) {
         outputTokens: payload.usage?.output_tokens ?? 0,
         totalTokens: payload.usage?.total_tokens ?? 0
       }
-    });
+    };
+
+    await settlePaymentUsage(paymentUsage, "completed");
+    return NextResponse.json(report);
   } catch (error) {
     console.error("Future-coordinate analysis failed", error);
-    return NextResponse.json({ error: "AI_RESPONSE_FAILED", message: "AI 분석 결과를 읽지 못했습니다." }, { status: 502 });
+    await settlePaymentUsage(paymentUsage, "failed", "AI_RESPONSE_FAILED");
+    return NextResponse.json(
+      {
+        error: "AI_RESPONSE_FAILED",
+        message: "AI 분석 결과를 읽지 못했습니다. 자동 재호출을 멈췄으니 고객센터로 문의해 주세요."
+      },
+      { status: 502 }
+    );
   }
 }

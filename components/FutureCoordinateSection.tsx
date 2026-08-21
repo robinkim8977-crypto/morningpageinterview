@@ -14,7 +14,7 @@ import {
   FUTURE_COORDINATE_COMMITMENT_KEY,
   isFutureCoordinateAnalysis
 } from "@/lib/future-coordinate";
-import { readPaymentReceipt } from "@/lib/payment";
+import { clearPaymentReceipt, readPaymentReceipt } from "@/lib/payment";
 import { readInterviewSession } from "@/lib/storage";
 import type { FutureCoordinateAnalysis, FuturePlan, FutureScene, InterviewSession } from "@/lib/types";
 
@@ -39,6 +39,16 @@ type Commitment = {
   duration: string;
   promisedAt?: string;
 };
+
+class ReportRequestError extends Error {
+  readonly retryable: boolean;
+
+  constructor(message: string, retryable: boolean) {
+    super(message);
+    this.name = "ReportRequestError";
+    this.retryable = retryable;
+  }
+}
 
 function localDate(offset = 0) {
   const date = new Date();
@@ -147,7 +157,7 @@ function EmptyState() {
   );
 }
 
-function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ErrorState({ message, onRetry, retryable }: { message: string; onRetry: () => void; retryable: boolean }) {
   return (
     <main className="page-shell min-h-screen bg-background">
       <Header />
@@ -155,7 +165,14 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
         <div className="max-w-xl">
           <h1 className="ko-keep text-4xl font-medium tracking-[-0.05em]">분석을 잠시 멈췄습니다.</h1>
           <p className="mt-5 leading-7 text-black/60">{message}</p>
-          <Button type="button" size="sm" className="mt-8" onClick={onRetry}><RefreshCw size={14} /> 다시 시도하기</Button>
+          {retryable ? (
+            <Button type="button" size="sm" className="mt-8" onClick={onRetry}><RefreshCw size={14} /> 다시 시도하기</Button>
+          ) : (
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Button asChild size="sm"><a href="mailto:morningpageinterview@gmail.com">고객센터 문의</a></Button>
+              <Button asChild size="sm" variant="outline"><Link href="/report">인터뷰 결과로 돌아가기</Link></Button>
+            </div>
+          )}
         </div>
       </section>
     </main>
@@ -277,6 +294,7 @@ export function FutureCoordinateSection() {
   const [isPreview, setIsPreview] = useState(false);
   const [paymentId, setPaymentId] = useState("");
   const [paymentChecked, setPaymentChecked] = useState(false);
+  const [retryable, setRetryable] = useState(true);
   const [commitment, setCommitment] = useState<Commitment>({ fingerprint: "", action: "", date: "", duration: "" });
   const [saved, setSaved] = useState(false);
   const fingerprint = useMemo(() => (session ? sessionFingerprint(session) : ""), [session]);
@@ -294,16 +312,18 @@ export function FutureCoordinateSection() {
   useEffect(() => {
     if (!session || !paymentChecked) return;
     if (!hasAnswers) { setLoading(false); return; }
-    if (process.env.NODE_ENV !== "development" && !paymentId) {
-      setError("결제 확인 후 미래좌표 리포트를 만들 수 있습니다.");
+
+    const cached = readCachedAnalysis(fingerprint);
+    if (cached) {
+      setAnalysis(cached);
+      setCommitment(readCommitment(fingerprint, cached));
       setLoading(false);
       return;
     }
 
-    const cached = readCachedAnalysis(fingerprint);
-    if (cached && requestIndex === 0) {
-      setAnalysis(cached);
-      setCommitment(readCommitment(fingerprint, cached));
+    if (process.env.NODE_ENV !== "development" && !paymentId) {
+      setError("결제 확인 후 미래좌표 리포트를 만들 수 있습니다.");
+      setRetryable(false);
       setLoading(false);
       return;
     }
@@ -311,6 +331,7 @@ export function FutureCoordinateSection() {
     const controller = new AbortController();
     setLoading(true);
     setError("");
+    setRetryable(true);
 
     fetch("/api/report", {
       method: "POST",
@@ -319,19 +340,24 @@ export function FutureCoordinateSection() {
       signal: controller.signal
     })
       .then(async (response) => {
-        const data = (await response.json()) as FutureCoordinateAnalysis | { message?: string };
+        const data = (await response.json()) as FutureCoordinateAnalysis | { error?: string; message?: string };
         if (!response.ok || !isFutureCoordinateAnalysis(data)) {
-          throw new Error("message" in data && data.message ? data.message : "잠시 후 다시 시도해 주세요.");
+          const message = "message" in data && data.message ? data.message : "잠시 후 다시 시도해 주세요.";
+          const canRetry = "error" in data && data.error === "PAYMENT_LEDGER_UNAVAILABLE";
+          throw new ReportRequestError(message, canRetry);
         }
         window.localStorage.setItem(FUTURE_COORDINATE_ANALYSIS_KEY, JSON.stringify({ fingerprint, analysis: data }));
         const nextCommitment = suggestedCommitment(fingerprint, data);
         window.localStorage.removeItem(FUTURE_COORDINATE_COMMITMENT_KEY);
+        clearPaymentReceipt();
         setCommitment(nextCommitment);
         setAnalysis(data);
+        setPaymentId("");
       })
       .catch((reason: unknown) => {
         if (reason instanceof DOMException && reason.name === "AbortError") return;
         setError(reason instanceof Error ? reason.message : "잠시 후 다시 시도해 주세요.");
+        setRetryable(reason instanceof ReportRequestError ? reason.retryable : true);
       })
       .finally(() => setLoading(false));
 
@@ -357,7 +383,7 @@ export function FutureCoordinateSection() {
   if (!session) return <AnalysisLoading />;
   if (!hasAnswers) return <EmptyState />;
   if (loading) return <AnalysisLoading />;
-  if (error || !analysis) return <ErrorState message={error || "결과를 불러오지 못했습니다."} onRetry={() => setRequestIndex((value) => value + 1)} />;
+  if (error || !analysis) return <ErrorState message={error || "결과를 불러오지 못했습니다."} retryable={retryable} onRetry={() => setRequestIndex((value) => value + 1)} />;
 
   return (
     <main className="page-shell min-h-screen bg-[#F8F7F4] future-coordinate-page">

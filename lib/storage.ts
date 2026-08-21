@@ -2,6 +2,7 @@
 
 import type { InterviewAnswer, InterviewSession } from "@/lib/types";
 import { QUESTIONNAIRE_VERSION, questions } from "@/data/questions";
+import { clearPaymentReceipt } from "@/lib/payment";
 
 export const INTERVIEW_STORAGE_KEY = "morning-page-interview-session";
 export const INTERVIEW_STORAGE_VERSION = 2;
@@ -150,6 +151,7 @@ export function resetInterviewState() {
   }
 
   clearReportStorage();
+  clearPaymentReceipt();
   saveInterviewSession(emptySession);
 }
 
