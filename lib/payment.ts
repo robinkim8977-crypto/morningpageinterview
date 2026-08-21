@@ -45,3 +45,8 @@ export function savePaymentReceipt(paymentId: string) {
   window.localStorage.setItem(FUTURE_COORDINATE_PAYMENT_KEY, JSON.stringify(receipt));
   return receipt;
 }
+
+export function clearPaymentReceipt() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(FUTURE_COORDINATE_PAYMENT_KEY);
+}

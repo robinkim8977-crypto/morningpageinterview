@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { questions } from "@/data/questions";
+import { readPaymentReceipt } from "@/lib/payment";
 import { readInterviewSession, resetInterviewState } from "@/lib/storage";
 import type { InterviewSession } from "@/lib/types";
 
@@ -386,7 +387,7 @@ function MessageSection({ message }: { message: string }) {
   );
 }
 
-function FutureCoordinateInvitation() {
+function FutureCoordinateInvitation({ hasPayment }: { hasPayment: boolean }) {
   return (
     <section className="mx-auto max-w-[1080px] border-t border-black/20 px-[clamp(20px,6vw,96px)] py-16 md:py-24">
       <div className="grid gap-8 bg-[#DDD2C5] p-7 md:grid-cols-[1fr_auto] md:items-end md:p-10">
@@ -398,7 +399,9 @@ function FutureCoordinateInvitation() {
           </p>
         </div>
         <Button asChild size="sm" className="min-w-44">
-          <Link href="/future-coordinate">미래좌표 알아보기</Link>
+          <Link href={hasPayment ? "/future-coordinate/result" : "/future-coordinate"}>
+            {hasPayment ? "미래좌표 결과 보기" : "미래좌표 알아보기"}
+          </Link>
         </Button>
       </div>
     </section>
@@ -436,10 +439,12 @@ function ReportLoadingState() {
 
 export function ReportSection() {
   const [session, setSession] = useState<InterviewSession | null>(null);
+  const [hasFutureCoordinatePayment, setHasFutureCoordinatePayment] = useState(false);
   const magazine = useMemo(() => (session ? buildMagazine(session) : null), [session]);
 
   useEffect(() => {
     setSession(readInterviewSession());
+    setHasFutureCoordinatePayment(Boolean(readPaymentReceipt()));
   }, []);
 
   if (!magazine) {
@@ -469,7 +474,7 @@ export function ReportSection() {
       ))}
 
       <MessageSection message={magazine.messageToPresent} />
-      <FutureCoordinateInvitation />
+      <FutureCoordinateInvitation hasPayment={hasFutureCoordinatePayment} />
 
       <div className="sticky bottom-0 z-20 border-t border-black/15 bg-background/95 px-5 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-center gap-3">

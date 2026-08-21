@@ -7,15 +7,27 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  clearPaymentReceipt,
   FUTURE_COORDINATE_PRICE,
   FUTURE_COORDINATE_PRODUCT_CODE,
   FUTURE_COORDINATE_PRODUCT_NAME,
   hasInterviewAnswers,
+  readPaymentReceipt,
   savePaymentReceipt
 } from "@/lib/payment";
 import { readInterviewSession } from "@/lib/storage";
 
 type PaymentMode = "disabled" | "test" | "live";
+type ExistingPaymentStatus = "checking" | "none" | "verified" | "error";
+
+class PaymentVerificationError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
 
 function configuredPaymentMode(): PaymentMode {
   const value = process.env.NEXT_PUBLIC_PAYMENT_MODE?.trim().toLowerCase();
@@ -30,7 +42,7 @@ async function verifyPayment(paymentId: string) {
   });
   const data = await response.json() as { verified?: boolean; message?: string };
   if (!response.ok || data.verified !== true) {
-    throw new Error(data.message || "결제 승인 상태를 확인하지 못했습니다.");
+    throw new PaymentVerificationError(data.message || "결제 승인 상태를 확인하지 못했습니다.", response.status);
   }
   savePaymentReceipt(paymentId);
 }
@@ -42,6 +54,7 @@ export function FutureCoordinatePurchase() {
   const [isPaying, setIsPaying] = useState(false);
   const [message, setMessage] = useState("");
   const [hasInterview, setHasInterview] = useState(false);
+  const [existingPaymentStatus, setExistingPaymentStatus] = useState<ExistingPaymentStatus>("checking");
   const mode = configuredPaymentMode();
   const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID?.trim();
   const channelKey = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY?.trim();
@@ -49,7 +62,64 @@ export function FutureCoordinatePurchase() {
 
   useEffect(() => {
     setHasInterview(hasInterviewAnswers(readInterviewSession()));
+    const receipt = readPaymentReceipt();
+    if (!receipt) {
+      setExistingPaymentStatus("none");
+      return;
+    }
+
+    verifyPayment(receipt.paymentId)
+      .then(() => setExistingPaymentStatus("verified"))
+      .catch((reason: unknown) => {
+        if (reason instanceof PaymentVerificationError && reason.status === 400) {
+          clearPaymentReceipt();
+          setExistingPaymentStatus("none");
+          return;
+        }
+        setMessage(reason instanceof Error ? reason.message : "기존 결제를 확인하지 못했습니다.");
+        setExistingPaymentStatus("error");
+      });
   }, []);
+
+  if (existingPaymentStatus === "checking") {
+    return (
+      <div className="mx-auto w-full max-w-2xl rounded-[24px] border border-black/20 p-6 text-center text-sm font-semibold text-black/55">
+        기존 결제 내역을 확인하고 있습니다.
+      </div>
+    );
+  }
+
+  if (existingPaymentStatus === "error") {
+    return (
+      <div className="mx-auto w-full max-w-2xl rounded-[24px] border border-black/20 p-6 text-center md:p-8">
+        <h3 className="ko-keep text-xl font-semibold tracking-[-0.03em]">기존 결제를 잠시 확인하지 못했습니다.</h3>
+        <p className="ko-keep mt-3 text-sm leading-6 text-black/58">중복 결제를 막기 위해 새로운 결제 요청을 멈췄습니다. 잠시 후 새로고침하거나 고객센터로 문의해 주세요.</p>
+        {message ? <p className="ko-keep mt-3 text-xs font-semibold text-red-700" role="alert">{message}</p> : null}
+      </div>
+    );
+  }
+
+  if (existingPaymentStatus === "verified") {
+    return (
+      <div className="mx-auto w-full max-w-2xl text-left">
+        <div className="rounded-[24px] border border-black/20 bg-black/[0.03] p-6 text-center md:p-8">
+          <p className="text-xs font-bold tracking-[0.14em] text-black/42">PAYMENT CONFIRMED</p>
+          <h3 className="ko-keep mt-3 text-2xl font-semibold tracking-[-0.04em]">이미 결제가 확인되었습니다.</h3>
+          <p className="ko-keep mt-4 text-sm leading-6 text-black/58">
+            {hasInterview
+              ? "추가 결제 없이 작성한 인터뷰의 미래좌표를 확인할 수 있습니다."
+              : "추가 결제 없이 인터뷰를 완료하면 미래좌표 분석이 시작됩니다."}
+          </p>
+          <Button asChild size="sm" className="mt-6 min-w-52">
+            <Link href={hasInterview ? "/future-coordinate/result" : "/start"}>
+              {hasInterview ? "미래좌표 결과 보기" : "인터뷰 시작하기"} <ArrowRight size={14} />
+            </Link>
+          </Button>
+        </div>
+        {mode === "test" ? <p className="mt-3 text-center text-xs font-semibold text-amber-700">테스트 결제 확인됨</p> : null}
+      </div>
+    );
+  }
 
   async function requestPayment() {
     if (!configured || !storeId || !channelKey) {

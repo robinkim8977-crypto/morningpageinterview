@@ -1,16 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
+import { readPaymentReceipt } from "@/lib/payment";
 
 const MIN_GENERATING_DELAY_MS = 1200;
 
 export function GeneratingSection() {
+  const [destination, setDestination] = useState<string | null>(null);
+
   useEffect(() => {
+    const nextDestination = readPaymentReceipt() ? "/future-coordinate/result" : "/report";
+    setDestination(nextDestination);
     const timeoutId = window.setTimeout(() => {
-      window.location.replace("/report");
+      window.location.replace(nextDestination);
     }, MIN_GENERATING_DELAY_MS);
 
     return () => {
@@ -30,9 +35,11 @@ export function GeneratingSection() {
             <br />
             잠시만 기다려주세요.
           </p>
-          <Button asChild className="mt-12">
-            <Link href="/report">리포트 바로 보기</Link>
-          </Button>
+          {destination ? (
+            <Button asChild className="mt-12">
+              <Link href={destination}>{destination === "/future-coordinate/result" ? "미래좌표 바로 보기" : "리포트 바로 보기"}</Link>
+            </Button>
+          ) : null}
         </div>
       </section>
     </main>
