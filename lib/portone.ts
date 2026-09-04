@@ -42,7 +42,10 @@ export async function verifyFutureCoordinatePayment(paymentId: string): Promise<
     throw new Error("PAYMENT_NOT_CONFIGURED");
   }
 
-  const response = await fetch(`https://api.portone.io/payments/${encodeURIComponent(paymentId)}`, {
+  const apiBaseUrl = process.env.NODE_ENV === "test"
+    ? process.env.PORTONE_API_BASE_URL?.trim().replace(/\/$/, "") || "https://api.portone.io"
+    : "https://api.portone.io";
+  const response = await fetch(`${apiBaseUrl}/payments/${encodeURIComponent(paymentId)}`, {
     headers: { Authorization: `PortOne ${apiSecret}` },
     cache: "no-store"
   });

@@ -39,7 +39,7 @@ export function createPreviewAnalysis(session: InterviewSession): FutureCoordina
       ],
       meaning: "이 미래에서 성공은 더 많이 해내는 것이 아니라, 집중과 회복과 관계가 서로를 해치지 않는 방식으로 살아가는 것입니다.",
       values: ["자기 기준", "몰입", "관계", "건강"],
-      currentClue: "이미 좋아하는 일을 오래 이어가기 위해 시간과 에너지를 어떻게 쓰고 싶은지 구체적으로 말하고 있습니다.",
+      currentClue: "답변에서 시간과 에너지를 어떻게 쓰고 싶은지 구체적으로 그린 대목은, 지금의 선택에서 오래 지키고 싶은 기준을 살펴볼 단서가 될 수 있습니다.",
       insight: "당신이 원하는 성장은 삶을 밀어내는 성취가 아니라, 삶을 지키기 때문에 오래가는 성취입니다."
     },
     {
@@ -53,7 +53,7 @@ export function createPreviewAnalysis(session: InterviewSession): FutureCoordina
       ],
       meaning: "전환점의 핵심은 큰 성과가 아니라, 개인적인 관심과 반복해온 습관이 바깥세상에서 의미를 얻었다는 증거입니다.",
       values: ["취향", "관찰", "지속", "자기 확신"],
-      currentClue: "좋아하는 이유를 한 문장으로 남기거나 작은 것을 오래 바라보는 습관은 이미 자신만의 기준을 만드는 시작점입니다.",
+      currentClue: "좋아하는 이유를 한 문장으로 남기고 작은 것을 오래 바라보는 미래의 모습은, 지금 시도해볼 수 있는 자기 기준 탐색의 단서입니다.",
       insight: "당신이 원하는 성공은 유명한 곳에 선택받는 것이 아니라, 당신의 고유한 시선 때문에 선택받는 것입니다."
     },
     {
@@ -67,7 +67,7 @@ export function createPreviewAnalysis(session: InterviewSession): FutureCoordina
       ],
       meaning: "다음 꿈은 지금의 성취를 더 크게 복제하는 일이 아니라, 자신이 어렵게 발견한 기준을 타인의 가능성과 연결하는 일입니다.",
       values: ["확장", "기여", "호기심", "자유"],
-      currentClue: "미래에 해보고 싶은 프로젝트를 구체적인 사람과 경험의 모습으로 설명하는 것 자체가 이미 다음 방향의 재료가 되고 있습니다.",
+      currentClue: "미래에 해보고 싶은 일을 구체적인 사람과 경험의 모습으로 설명한 대목은, 지금 다음 방향을 살펴볼 단서가 될 수 있습니다.",
       insight: "당신의 다음 성장은 더 앞서가는 일이 아니라, 먼저 발견한 길을 다른 사람도 걸어볼 수 있게 만드는 일입니다."
     }
   ];
