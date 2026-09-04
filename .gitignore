@@ -12,3 +12,7 @@ coverage/
 *.tsbuildinfo
 .codex/
 .agents/
+
+# Local archives and standalone media projects are kept outside this web app's Git history.
+/.local-archive/
+/morningpage-reel/
