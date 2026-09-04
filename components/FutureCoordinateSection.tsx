@@ -343,7 +343,8 @@ export function FutureCoordinateSection() {
         const data = (await response.json()) as FutureCoordinateAnalysis | { error?: string; message?: string };
         if (!response.ok || !isFutureCoordinateAnalysis(data)) {
           const message = "message" in data && data.message ? data.message : "잠시 후 다시 시도해 주세요.";
-          const canRetry = "error" in data && data.error === "PAYMENT_LEDGER_UNAVAILABLE";
+          const canRetry = "error" in data
+            && (data.error === "PAYMENT_LEDGER_UNAVAILABLE" || data.error === "PAYMENT_REVIEW_REQUIRED");
           throw new ReportRequestError(message, canRetry);
         }
         window.localStorage.setItem(FUTURE_COORDINATE_ANALYSIS_KEY, JSON.stringify({ fingerprint, analysis: data }));

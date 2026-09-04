@@ -60,6 +60,8 @@ PAYMENT_USAGE_HMAC_SECRET=openssl_rand_hex_32로_만든_값
 
 Redis가 응답하지 않으면 비용 보호를 위해 OpenAI를 호출하지 않습니다. 운영·Preview·로컬 키는 `VERCEL_ENV` 또는 `NODE_ENV` 이름공간으로 분리됩니다.
 
+OpenAI 요청에는 고유한 `X-Client-Request-Id`를 보내고 응답의 `x-request-id`를 장부에 기록합니다. 실패 건은 운영자가 `/admin/recovery`에서 상태와 요청 ID를 확인할 수 있습니다. 복구 절차는 [`docs/operations-recovery.md`](./operations-recovery.md)를 따릅니다.
+
 ## 4. 실제 결과 검토 체크리스트
 
 - 세 장면이 서로 다른 내용이며 인터뷰의 구체적인 표현에 근거하는가?

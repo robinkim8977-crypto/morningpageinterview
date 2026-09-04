@@ -1,9 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { questions } from "@/data/questions";
 import { createPreviewAnalysis, isFutureCoordinateAnalysis } from "@/lib/future-coordinate";
 import {
   configuredPaymentUsageLedger,
   PaymentLedgerError,
+  type PaymentUsageDiagnostics,
   type PaymentUsageReservation
 } from "@/lib/payment-ledger";
 import { FUTURE_COORDINATE_PRODUCT_CODE } from "@/lib/payment";
@@ -129,14 +131,15 @@ type PaymentUsageContext = {
 async function settlePaymentUsage(
   context: PaymentUsageContext | null,
   outcome: "completed" | "failed",
-  errorCode?: string
+  errorCode?: string,
+  diagnostics?: PaymentUsageDiagnostics
 ) {
   if (!context) return;
 
   try {
     const updated = outcome === "completed"
-      ? await context.ledger.complete(context.reservation)
-      : await context.ledger.fail(context.reservation, errorCode || "UNKNOWN_FAILURE");
+      ? await context.ledger.complete(context.reservation, diagnostics)
+      : await context.ledger.fail(context.reservation, errorCode || "UNKNOWN_FAILURE", diagnostics);
     if (!updated) {
       console.error("Payment usage record was not updated", {
         outcome,
@@ -240,12 +243,16 @@ export async function POST(request: Request) {
     })
     .join("\n\n---\n\n");
 
+  const openaiClientRequestId = `fc-${paymentUsage?.reservation.record.attemptId || randomUUID()}`;
+  let openaiDiagnostics: PaymentUsageDiagnostics = { openaiClientRequestId };
+
   try {
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "X-Client-Request-Id": openaiClientRequestId
       },
       body: JSON.stringify({
         model,
@@ -315,10 +322,21 @@ export async function POST(request: Request) {
       })
     });
 
+    openaiDiagnostics = {
+      openaiClientRequestId,
+      openaiRequestId: response.headers.get("x-request-id") || undefined,
+      openaiHttpStatus: response.status
+    };
+
     if (!response.ok) {
       const detail = await response.text();
-      console.error("OpenAI report request failed", response.status, detail.slice(0, 500));
-      await settlePaymentUsage(paymentUsage, "failed", `OPENAI_HTTP_${response.status}`);
+      console.error("OpenAI report request failed", {
+        status: response.status,
+        requestId: openaiDiagnostics.openaiRequestId,
+        clientRequestId: openaiClientRequestId,
+        detail: detail.slice(0, 500)
+      });
+      await settlePaymentUsage(paymentUsage, "failed", `OPENAI_HTTP_${response.status}`, openaiDiagnostics);
       return NextResponse.json(
         {
           error: "AI_REQUEST_FAILED",
@@ -350,11 +368,15 @@ export async function POST(request: Request) {
       }
     };
 
-    await settlePaymentUsage(paymentUsage, "completed");
+    await settlePaymentUsage(paymentUsage, "completed", undefined, openaiDiagnostics);
     return NextResponse.json(report);
   } catch (error) {
-    console.error("Future-coordinate analysis failed", error);
-    await settlePaymentUsage(paymentUsage, "failed", "AI_RESPONSE_FAILED");
+    console.error("Future-coordinate analysis failed", {
+      error,
+      requestId: openaiDiagnostics.openaiRequestId,
+      clientRequestId: openaiClientRequestId
+    });
+    await settlePaymentUsage(paymentUsage, "failed", "AI_RESPONSE_FAILED", openaiDiagnostics);
     return NextResponse.json(
       {
         error: "AI_RESPONSE_FAILED",
