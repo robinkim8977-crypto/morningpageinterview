@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
+import { trackPaymentError, trackPurchaseSuccess } from "@/lib/analytics";
 import { hasInterviewAnswers, savePaymentReceipt } from "@/lib/payment";
 import { readInterviewSession } from "@/lib/storage";
 
@@ -20,6 +21,7 @@ export function PaymentCompleteSection() {
 
     if (code || !paymentId) {
       setError(message || "결제가 완료되지 않았습니다.");
+      if (code) trackPaymentError("redirect");
       return;
     }
 
@@ -32,9 +34,13 @@ export function PaymentCompleteSection() {
         const data = await response.json() as { verified?: boolean; message?: string };
         if (!response.ok || data.verified !== true) throw new Error(data.message || "결제 승인 상태를 확인하지 못했습니다.");
         savePaymentReceipt(paymentId);
+        trackPurchaseSuccess();
         router.replace(hasInterviewAnswers(readInterviewSession()) ? "/future-coordinate/result" : "/start");
       })
-      .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "결제 확인 중 오류가 발생했습니다."));
+      .catch((reason: unknown) => {
+        setError(reason instanceof Error ? reason.message : "결제 확인 중 오류가 발생했습니다.");
+        trackPaymentError("verification");
+      });
   }, [router, searchParams]);
 
   return (

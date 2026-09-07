@@ -3,9 +3,15 @@
 import * as PortOne from "@portone/browser-sdk/v2";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  startAnalyticsCheckout,
+  trackFutureCoordinateView,
+  trackPaymentError,
+  trackPurchaseSuccess
+} from "@/lib/analytics";
 import {
   clearPaymentReceipt,
   FUTURE_COORDINATE_PRICE,
@@ -15,6 +21,12 @@ import {
   readPaymentReceipt,
   savePaymentReceipt
 } from "@/lib/payment";
+import {
+  configuredPurchasePaymentMethods,
+  paymentFailureMessage,
+  paymentRequestMethod,
+  type PurchasePaymentMethodId
+} from "@/lib/payment-methods";
 import { readInterviewSession } from "@/lib/storage";
 
 type PaymentMode = "disabled" | "test" | "live";
@@ -55,10 +67,21 @@ export function FutureCoordinatePurchase() {
   const [message, setMessage] = useState("");
   const [hasInterview, setHasInterview] = useState(false);
   const [existingPaymentStatus, setExistingPaymentStatus] = useState<ExistingPaymentStatus>("checking");
+  const hasTrackedProductView = useRef(false);
   const mode = configuredPaymentMode();
   const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID?.trim();
-  const channelKey = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY?.trim();
-  const configured = mode !== "disabled" && Boolean(storeId && channelKey);
+  const paymentMethods = configuredPurchasePaymentMethods({
+    cardChannelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY_CARD,
+    legacyCardChannelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY,
+    kakaopayChannelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY_KAKAOPAY,
+    naverpayChannelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY_NAVERPAY
+  });
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<PurchasePaymentMethodId>(
+    paymentMethods[0]?.id || "card"
+  );
+  const selectedPaymentMethod = paymentMethods.find((method) => method.id === selectedPaymentMethodId)
+    || paymentMethods[0];
+  const configured = mode !== "disabled" && Boolean(storeId && selectedPaymentMethod);
 
   useEffect(() => {
     setHasInterview(hasInterviewAnswers(readInterviewSession()));
@@ -80,6 +103,12 @@ export function FutureCoordinatePurchase() {
         setExistingPaymentStatus("error");
       });
   }, []);
+
+  useEffect(() => {
+    if (existingPaymentStatus !== "none" || !configured || hasTrackedProductView.current) return;
+    trackFutureCoordinateView();
+    hasTrackedProductView.current = true;
+  }, [configured, existingPaymentStatus]);
 
   if (existingPaymentStatus === "checking") {
     return (
@@ -122,7 +151,7 @@ export function FutureCoordinatePurchase() {
   }
 
   async function requestPayment() {
-    if (!configured || !storeId || !channelKey) {
+    if (!configured || !storeId || !selectedPaymentMethod) {
       setMessage("결제 연동 정보를 확인하고 있습니다. 잠시 후 다시 이용해 주세요.");
       return;
     }
@@ -136,17 +165,17 @@ export function FutureCoordinatePurchase() {
     const session = readInterviewSession();
     // KCP V2 limits order/payment identifiers to 40 characters.
     const paymentId = `fc-${crypto.randomUUID()}`;
+    startAnalyticsCheckout(selectedPaymentMethod.id);
 
     try {
       const response = await PortOne.requestPayment({
         storeId,
-        channelKey,
+        ...paymentRequestMethod(selectedPaymentMethod),
         paymentId,
         orderName: FUTURE_COORDINATE_PRODUCT_NAME,
         orderDetail: "인터뷰 답변을 분석한 개인화 AI 미래좌표 리포트",
         totalAmount: FUTURE_COORDINATE_PRICE,
         currency: "CURRENCY_KRW",
-        payMethod: "CARD",
         customer: session.name.trim() ? { fullName: session.name.trim() } : undefined,
         productType: "DIGITAL",
         products: [{
@@ -161,16 +190,23 @@ export function FutureCoordinatePurchase() {
         redirectUrl: `${window.location.origin}/future-coordinate/payment-complete`
       });
 
-      if (!response) return;
+      if (!response) {
+        trackPaymentError("request", selectedPaymentMethod.id);
+        return;
+      }
       if (response.code) {
-        setMessage(response.message || "결제가 완료되지 않았습니다.");
+        // 네이버페이를 포함한 PG 오류 문구는 운영 진단을 위해 원문 그대로 표시합니다.
+        setMessage(paymentFailureMessage(response.message));
+        trackPaymentError("provider_response", selectedPaymentMethod.id);
         return;
       }
 
       await verifyPayment(response.paymentId);
+      trackPurchaseSuccess();
       router.push(hasInterviewAnswers(readInterviewSession()) ? "/future-coordinate/result" : "/start");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "결제를 확인하는 중 오류가 발생했습니다.");
+      trackPaymentError(error instanceof PaymentVerificationError ? "verification" : "request", selectedPaymentMethod.id);
     } finally {
       setIsPaying(false);
     }
@@ -178,7 +214,40 @@ export function FutureCoordinatePurchase() {
 
   return (
     <div className="mx-auto w-full max-w-2xl text-left">
-      <div className="rounded-[24px] border border-black/20 p-5 md:p-6">
+      {paymentMethods.length > 1 ? (
+        <fieldset>
+          <legend className="text-sm font-semibold">결제 수단</legend>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {paymentMethods.map((method) => {
+              const selected = method.id === selectedPaymentMethod?.id;
+              return (
+                <label
+                  key={method.id}
+                  className={`cursor-pointer rounded-[18px] border p-4 transition-colors ${selected ? "border-black bg-black text-white" : "border-black/20 bg-white hover:border-black/50"}`}
+                >
+                  <input
+                    className="sr-only"
+                    type="radio"
+                    name="payment-method"
+                    value={method.id}
+                    checked={selected}
+                    onChange={() => {
+                      setSelectedPaymentMethodId(method.id);
+                      setMessage("");
+                    }}
+                  />
+                  <span className="block text-sm font-semibold">{method.label}</span>
+                  <span className={`ko-keep mt-1 block text-xs leading-5 ${selected ? "text-white/65" : "text-black/48"}`}>
+                    {method.description}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+      ) : null}
+
+      <div className={`rounded-[24px] border border-black/20 p-5 md:p-6 ${paymentMethods.length > 1 ? "mt-5" : ""}`}>
         <label className="flex cursor-pointer items-start gap-3 text-sm leading-6">
           <input className="mt-1 h-4 w-4 accent-black" type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
           <span><strong>[필수]</strong> <Link className="underline underline-offset-4" href="/terms">이용약관</Link> 및 <Link className="underline underline-offset-4" href="/privacy">개인정보처리방침</Link>에 동의합니다.</span>
@@ -190,7 +259,11 @@ export function FutureCoordinatePurchase() {
       </div>
 
       <Button type="button" size="sm" className="mt-5 h-12 w-full" disabled={!configured || isPaying} onClick={requestPayment}>
-        {isPaying ? "결제 확인 중…" : configured ? `${FUTURE_COORDINATE_PRICE.toLocaleString("ko-KR")}원 결제하기` : "결제 연동 점검 중"}
+        {isPaying
+          ? "결제 확인 중…"
+          : configured
+            ? `${selectedPaymentMethod?.label}로 ${FUTURE_COORDINATE_PRICE.toLocaleString("ko-KR")}원 결제하기`
+            : "결제 연동 점검 중"}
         {!isPaying && configured ? <ArrowRight size={14} /> : null}
       </Button>
       {mode === "test" ? <p className="mt-3 text-center text-xs font-semibold text-amber-700">테스트 채널 · 실제 금액은 출금되지 않습니다.</p> : null}

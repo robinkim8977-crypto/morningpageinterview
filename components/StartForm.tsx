@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { trackInterviewStart } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { readInterviewSession, startNewInterviewSession } from "@/lib/storage";
 
@@ -46,6 +47,7 @@ export function StartForm() {
       setErrors({ name: "브라우저에 인터뷰를 저장하지 못했습니다. 일반 브라우저 창에서 다시 시도해 주세요." });
       return;
     }
+    trackInterviewStart();
     router.push("/interview");
   }
 

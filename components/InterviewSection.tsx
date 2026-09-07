@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Header } from "@/components/Header";
 import { ProgressBar } from "@/components/ProgressBar";
 import { questions } from "@/data/questions";
+import { trackInterviewComplete } from "@/lib/analytics";
 import { readInterviewSession, saveInterviewSession } from "@/lib/storage";
 
 const total = questions.length;
@@ -259,6 +260,7 @@ export function InterviewSection() {
       setSaveMessage("마지막 답변을 저장하지 못했습니다. 이 탭을 유지한 채 다시 시도해 주세요.");
       return;
     }
+    trackInterviewComplete();
     router.push("/generating");
   }
 

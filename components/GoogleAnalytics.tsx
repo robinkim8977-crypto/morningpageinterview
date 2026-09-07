@@ -1,14 +1,8 @@
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
-
-declare global {
-  interface Window {
-    dataLayer?: unknown[];
-    gtag?: (...args: unknown[]) => void;
-  }
-}
+import { sendAnalyticsPageView } from "@/lib/analytics";
 
 type GoogleAnalyticsProps = {
   measurementId?: string;
@@ -16,28 +10,14 @@ type GoogleAnalyticsProps = {
 
 export function GoogleAnalyticsPageView({ measurementId }: GoogleAnalyticsProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const hasTrackedInitialPageView = useRef(false);
+  const lastTrackedPath = useRef("");
 
   useEffect(() => {
-    if (!measurementId || !window.gtag) {
-      return;
+    if (!measurementId || lastTrackedPath.current === pathname) return;
+    if (sendAnalyticsPageView(measurementId, pathname)) {
+      lastTrackedPath.current = pathname;
     }
-
-    if (!hasTrackedInitialPageView.current) {
-      hasTrackedInitialPageView.current = true;
-      return;
-    }
-
-    const search = searchParams.toString();
-    const pagePath = search ? `${pathname}?${search}` : pathname;
-
-    window.gtag("config", measurementId, {
-      page_path: pagePath,
-      page_location: window.location.href,
-      page_title: document.title
-    });
-  }, [measurementId, pathname, searchParams]);
+  }, [measurementId, pathname]);
 
   return null;
 }

@@ -9,6 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  trackFirstActionCommitted,
+  trackPdfDownload,
+  trackReportError,
+  trackReportGenerated
+} from "@/lib/analytics";
+import {
   FUTURE_COORDINATE_ANALYSIS_KEY,
   FUTURE_COORDINATE_ANALYSIS_VERSION,
   FUTURE_COORDINATE_COMMITMENT_KEY,
@@ -297,6 +303,7 @@ export function FutureCoordinateSection() {
   const [retryable, setRetryable] = useState(true);
   const [commitment, setCommitment] = useState<Commitment>({ fingerprint: "", action: "", date: "", duration: "" });
   const [saved, setSaved] = useState(false);
+  const hasTrackedReport = useRef(false);
   const fingerprint = useMemo(() => (session ? sessionFingerprint(session) : ""), [session]);
   const hasAnswers = session?.answers.some((answer) => answer.answer.trim()) ?? false;
 
@@ -318,6 +325,10 @@ export function FutureCoordinateSection() {
       setAnalysis(cached);
       setCommitment(readCommitment(fingerprint, cached));
       setLoading(false);
+      if (!hasTrackedReport.current) {
+        trackReportGenerated("future_coordinate", "cache", cached.generatedAt || "current");
+        hasTrackedReport.current = true;
+      }
       return;
     }
 
@@ -354,11 +365,16 @@ export function FutureCoordinateSection() {
         setCommitment(nextCommitment);
         setAnalysis(data);
         setPaymentId("");
+        if (!hasTrackedReport.current) {
+          trackReportGenerated("future_coordinate", data.mode === "ai" ? "ai" : "preview", data.generatedAt || "current");
+          hasTrackedReport.current = true;
+        }
       })
       .catch((reason: unknown) => {
         if (reason instanceof DOMException && reason.name === "AbortError") return;
         setError(reason instanceof Error ? reason.message : "잠시 후 다시 시도해 주세요.");
         setRetryable(reason instanceof ReportRequestError ? reason.retryable : true);
+        trackReportError(reason instanceof ReportRequestError ? reason.retryable : true);
       })
       .finally(() => setLoading(false));
 
@@ -378,6 +394,7 @@ export function FutureCoordinateSection() {
     window.localStorage.setItem(FUTURE_COORDINATE_COMMITMENT_KEY, JSON.stringify(next));
     setCommitment(next);
     setSaved(true);
+    trackFirstActionCommitted();
     window.setTimeout(() => setSaved(false), 2400);
   }
 
@@ -469,7 +486,10 @@ export function FutureCoordinateSection() {
 
       <section className="flex flex-wrap items-center justify-center gap-4 border-t border-black/15 px-5 py-16 future-coordinate-actions">
         <Button asChild size="sm" className="min-w-48"><Link href="/report"><ArrowLeft size={14} /> 인터뷰 결과로 돌아가기</Link></Button>
-        <Button type="button" size="sm" className="min-w-48" onClick={() => window.print()}>PDF로 저장하기</Button>
+        <Button type="button" size="sm" className="min-w-48" onClick={() => {
+          trackPdfDownload("future_coordinate");
+          window.print();
+        }}>PDF로 저장하기</Button>
       </section>
     </main>
   );

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { questions } from "@/data/questions";
+import { trackPdfDownload, trackReportGenerated } from "@/lib/analytics";
 import { readPaymentReceipt } from "@/lib/payment";
 import { readInterviewSession, resetInterviewState } from "@/lib/storage";
 import type { InterviewSession } from "@/lib/types";
@@ -440,12 +441,23 @@ function ReportLoadingState() {
 export function ReportSection() {
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [hasFutureCoordinatePayment, setHasFutureCoordinatePayment] = useState(false);
+  const hasTrackedReport = useRef(false);
   const magazine = useMemo(() => (session ? buildMagazine(session) : null), [session]);
 
   useEffect(() => {
     setSession(readInterviewSession());
     setHasFutureCoordinatePayment(Boolean(readPaymentReceipt()));
   }, []);
+
+  useEffect(() => {
+    if (!magazine || hasTrackedReport.current) return;
+    const hasContent = magazine.sections.length > 0
+      || magazine.hardTimeSections.length > 0
+      || hasAnswer(magazine.messageToPresent);
+    if (!hasContent) return;
+    trackReportGenerated("free", "local", session?.completedAt || "current");
+    hasTrackedReport.current = true;
+  }, [magazine, session?.completedAt]);
 
   if (!magazine) {
     return <ReportLoadingState />;
@@ -478,7 +490,10 @@ export function ReportSection() {
 
       <div className="sticky bottom-0 z-20 border-t border-black/15 bg-background/95 px-5 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-center gap-3">
-          <Button type="button" size="sm" className="min-w-36" onClick={() => downloadMemoryPdf(magazine)}>
+          <Button type="button" size="sm" className="min-w-36" onClick={() => {
+            trackPdfDownload("free");
+            downloadMemoryPdf(magazine);
+          }}>
             PDF 다운로드
           </Button>
           <Button asChild size="sm" className="min-w-36">
