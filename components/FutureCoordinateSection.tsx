@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowLeft, Check, RefreshCw } from "lucide-react";
+import { ReportImageSave } from "@/components/ReportImageSave";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -273,6 +274,10 @@ function RoadmapPage({ plan }: { plan: FuturePlan }) {
         <p className="ko-keep mt-2 text-sm font-medium text-black/48">{meta.korean}</p>
         <p className="mt-6 text-[clamp(70px,13vw,170px)] font-medium leading-none tracking-[-0.085em]">{plan.days}</p>
         <h2 className="ko-keep mt-8 text-[clamp(36px,5vw,66px)] font-medium leading-[1.05] tracking-[-0.065em]">{plan.goal}</h2>
+        {plan.evidence ? <blockquote className="mt-7 max-w-3xl border-l-2 border-black/25 pl-5">
+          <p className="text-xs font-semibold text-black/45">당신의 답변에서 · Q.{plan.evidence.questionId}</p>
+          <p className="ko-keep mt-2 whitespace-pre-line text-base leading-7">“{plan.evidence.quote}”</p>
+        </blockquote> : null}
         <p className="ko-keep mt-7 max-w-3xl text-base leading-7 text-black/58 md:text-lg">{plan.description}</p>
         <div className="mt-12 grid gap-5 md:grid-cols-2">
           {plan.actions.map((action, index) => (
@@ -486,6 +491,12 @@ export function FutureCoordinateSection() {
 
       <section className="flex flex-wrap items-center justify-center gap-4 border-t border-black/15 px-5 py-16 future-coordinate-actions">
         <Button asChild size="sm" className="min-w-48"><Link href="/report"><ArrowLeft size={14} /> 인터뷰 결과로 돌아가기</Link></Button>
+        <ReportImageSave title={`${session.name}님의 미래좌표`} sections={[
+          ...analysis.scenes.map((scene) => ({ title: scene.title, body: [...scene.scene, scene.meaning, `가치: ${scene.values.join(" · ")}`, scene.currentClue, scene.insight].join("\n\n") })),
+          { title: analysis.direction.title, body: [analysis.direction.summary, ...analysis.direction.steps].join("\n\n") },
+          ...analysis.roadmap.map((plan) => ({ title: `${plan.days}일 · ${plan.goal}`, body: [plan.evidence ? `당신의 답변에서 · Q.${plan.evidence.questionId}\n“${plan.evidence.quote}”` : "", plan.description, ...plan.actions, plan.result].join("\n\n") })),
+          { title: "72시간 안의 첫 행동", body: [commitment.action || analysis.firstAction.action, analysis.firstAction.reason, `실행 날짜: ${commitment.date}`, `예상 소요시간: ${commitment.duration || analysis.firstAction.duration}`].join("\n\n") }
+        ]} />
         <Button type="button" size="sm" className="min-w-48" onClick={() => {
           trackPdfDownload("future_coordinate");
           window.print();

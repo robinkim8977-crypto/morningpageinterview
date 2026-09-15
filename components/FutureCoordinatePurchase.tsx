@@ -61,6 +61,7 @@ async function verifyPayment(paymentId: string) {
 
 export function FutureCoordinatePurchase() {
   const router = useRouter();
+  const [customerName, setCustomerName] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [withdrawalAccepted, setWithdrawalAccepted] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
@@ -84,7 +85,9 @@ export function FutureCoordinatePurchase() {
   const configured = mode !== "disabled" && Boolean(storeId && selectedPaymentMethod);
 
   useEffect(() => {
-    setHasInterview(hasInterviewAnswers(readInterviewSession()));
+    const storedSession = readInterviewSession();
+    setHasInterview(hasInterviewAnswers(storedSession));
+    setCustomerName(storedSession.name.trim());
     const receipt = readPaymentReceipt();
     if (!receipt) {
       setExistingPaymentStatus("none");
@@ -160,9 +163,14 @@ export function FutureCoordinatePurchase() {
       return;
     }
 
+    if (!customerName.trim()) {
+      setMessage("주문자명을 입력해 주세요.");
+      document.getElementById("payment-customer-name")?.focus();
+      return;
+    }
+
     setIsPaying(true);
     setMessage("");
-    const session = readInterviewSession();
     // KCP V2 limits order/payment identifiers to 40 characters.
     const paymentId = `fc-${crypto.randomUUID()}`;
     startAnalyticsCheckout(selectedPaymentMethod.id);
@@ -176,7 +184,7 @@ export function FutureCoordinatePurchase() {
         orderDetail: "인터뷰 답변을 분석한 개인화 AI 미래좌표 리포트",
         totalAmount: FUTURE_COORDINATE_PRICE,
         currency: "CURRENCY_KRW",
-        customer: session.name.trim() ? { fullName: session.name.trim() } : undefined,
+        customer: { fullName: customerName.trim() },
         productType: "DIGITAL",
         products: [{
           id: FUTURE_COORDINATE_PRODUCT_CODE,
@@ -246,6 +254,14 @@ export function FutureCoordinatePurchase() {
           </div>
         </fieldset>
       ) : null}
+
+      <label className="mt-5 grid gap-2 text-sm font-semibold" htmlFor="payment-customer-name">
+        주문자명
+        <input id="payment-customer-name" autoComplete="name" required maxLength={100}
+          value={customerName} onChange={(event) => setCustomerName(event.target.value)}
+          className="h-12 rounded-xl border border-black/30 bg-white px-4" placeholder="주문자 이름을 입력해 주세요" />
+        <span className="text-xs font-normal text-black/55">결제 내역에 표시할 이름을 확인해 주세요.</span>
+      </label>
 
       <div className={`rounded-[24px] border border-black/20 p-5 md:p-6 ${paymentMethods.length > 1 ? "mt-5" : ""}`}>
         <label className="flex cursor-pointer items-start gap-3 text-sm leading-6">

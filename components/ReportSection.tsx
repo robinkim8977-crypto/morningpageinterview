@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { ReportImageSave } from "@/components/ReportImageSave";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { questions } from "@/data/questions";
@@ -490,6 +491,13 @@ export function ReportSection() {
 
       <div className="sticky bottom-0 z-20 border-t border-black/15 bg-background/95 px-5 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-center gap-3">
+          <ReportImageSave title={`${magazine.name}님의 미래 기억`} sections={[
+            { title: `${magazine.futureYear}년의 미래 기억`, body: `${magazine.name}님의 인터뷰` },
+            ...magazine.sections.slice(0, 5).map((section) => ({ title: section.title, body: [section.question, section.body].filter(Boolean).join("\n\n") })),
+            ...magazine.hardTimeSections.map((section) => ({ title: section.title, body: [section.question, section.body].filter(Boolean).join("\n\n") })),
+            ...magazine.sections.slice(5).map((section) => ({ title: section.title, body: [section.question, section.body].filter(Boolean).join("\n\n") })),
+            { title: "현재의 나에게 보내는 메시지", body: magazine.messageToPresent }
+          ]} />
           <Button type="button" size="sm" className="min-w-36" onClick={() => {
             trackPdfDownload("free");
             downloadMemoryPdf(magazine);

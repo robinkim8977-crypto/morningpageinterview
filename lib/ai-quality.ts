@@ -260,6 +260,19 @@ export function evaluateAiQuality(
     `단계 순서 ${stagesValid ? "충족" : "미충족"}, 행동 ${actionCount}개, 서로 다른 목표 ${goalsAreDistinct ? "충족" : "미충족"}, 현재 환경 가정 ${roadmapContextSafe ? "없음" : roadmapContextTerms.join(", ")}`
   ));
 
+  const ungroundedPlans = report.roadmap.filter((plan) => {
+    const evidence = plan.evidence;
+    if (!evidence) return true;
+    const answer = session.answers.find((item) => item.questionId === evidence.questionId)?.answer;
+    return !answer || !evidence.quote.trim() || !answer.includes(evidence.quote);
+  });
+  // A mandatory gate, without changing the existing 100-point scale.
+  checks.push({
+    ...check("roadmap-evidence", "각 기간의 답변 원문 근거", "grounding", "critical", 0, 0,
+      ungroundedPlans.length ? `근거 누락 또는 원문 불일치: ${ungroundedPlans.map((plan) => plan.days).join(", ")}일` : "세 기간 모두 실제 답변의 원문을 인용했습니다."),
+    passed: ungroundedPlans.length === 0
+  });
+
   const tooLong = lengthViolations(report);
   checks.push(check(
     "length",

@@ -109,6 +109,9 @@ function isPlan(value: unknown): value is FuturePlan {
   return (
     (item.days === 30 || item.days === 90 || item.days === 365) &&
     (item.stage === "NOTICE" || item.stage === "EXPERIMENT" || item.stage === "BUILD") &&
+    (item.evidence === undefined || (typeof item.evidence === "object" && item.evidence !== null
+      && Number.isInteger(item.evidence.questionId) && item.evidence.questionId >= 1 && item.evidence.questionId <= 11
+      && typeof item.evidence.quote === "string" && item.evidence.quote.trim().length > 0)) &&
     typeof item.goal === "string" &&
     typeof item.description === "string" &&
     isStringArray(item.actions, 1, 2) &&

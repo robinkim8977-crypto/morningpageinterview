@@ -13,6 +13,7 @@ export type InterviewSession = {
 };
 
 export type FuturePlan = {
+  evidence?: { questionId: number; quote: string };
   days: 30 | 90 | 365;
   stage: "NOTICE" | "EXPERIMENT" | "BUILD";
   goal: string;

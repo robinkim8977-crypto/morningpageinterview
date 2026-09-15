@@ -27,7 +27,11 @@ function completeSession() {
 }
 
 function validReport() {
-  return structuredClone(createPreviewAnalysis(completeSession()));
+  const report = structuredClone(createPreviewAnalysis(completeSession()));
+  report.roadmap.forEach((plan, index) => {
+    plan.evidence = { questionId: index + 1, quote: completeSession().answers[index].answer };
+  });
+  return report;
 }
 
 test("기준을 충족하는 리포트는 85점 이상으로 통과한다", () => {
@@ -114,4 +118,12 @@ test("첫 행동이 답변을 중립적으로 바꾸고 근거 설명에 원래 
   const firstAction = result.checks.find((item) => item.id === "first-action");
   assert.equal(firstAction.passed, true);
   assert.match(firstAction.detail, /답변 어휘 연결 충족/);
+});
+
+ test("로드맵 인용이 누락되거나 다른 사람의 답변이면 실패한다", () => {
+  const report = validReport();
+  delete report.roadmap[0].evidence;
+  report.roadmap[1].evidence.quote = "답변에 없는 공개에 대한 두려움";
+  const result = evaluateAiQuality(completeSession(), report);
+  assert.ok(result.criticalFailures.includes("roadmap-evidence"));
 });
