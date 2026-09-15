@@ -278,7 +278,7 @@ export function FutureCoordinatePurchase() {
         {isPaying
           ? "결제 확인 중…"
           : configured
-            ? `${selectedPaymentMethod?.label}로 ${FUTURE_COORDINATE_PRICE.toLocaleString("ko-KR")}원 결제하기`
+            ? "결제하기"
             : "결제 연동 점검 중"}
         {!isPaying && configured ? <ArrowRight size={14} /> : null}
       </Button>
