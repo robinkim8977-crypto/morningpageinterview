@@ -31,10 +31,10 @@ function Eyebrow({ children }: { children: ReactNode }) {
 
 function PurchaseLink({ compact = false }: { compact?: boolean }) {
   return (
-    <Link href={purchaseHref} className={`${styles.purchaseButton} ${compact ? styles.compactButton : ""}`}>
+    <a href={purchaseHref} className={`${styles.purchaseButton} ${compact ? styles.compactButton : ""}`}>
       {price} · {compact ? "구매하기" : "미래좌표 구매하기"}
       <ArrowRight size={17} aria-hidden="true" />
-    </Link>
+    </a>
   );
 }
 
