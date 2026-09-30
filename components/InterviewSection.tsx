@@ -28,6 +28,7 @@ export function InterviewSection() {
   const [saveMessage, setSaveMessage] = useState("");
   const answerRef = useRef("");
   const questionIdRef = useRef<number>(questions[0].id);
+  const restored = useRef(false);
   const currentQuestion = questions[currentIndex];
   const questionText = splitQuestion(currentQuestion.question);
 
@@ -48,6 +49,18 @@ export function InterviewSection() {
   }, []);
 
   useEffect(() => {
+    if (!restored.current) {
+      restored.current = true;
+      const saved = readInterviewSession();
+      const nextIndex = questions.findIndex((question) => !saved.answers.some((item) => item.questionId === question.id && item.answer.trim()));
+      if (nextIndex > 0) {
+        questionIdRef.current = questions[nextIndex].id;
+        answerRef.current = saved.answers.find((item) => item.questionId === questions[nextIndex].id)?.answer || "";
+        setCurrentIndex(nextIndex);
+        setAnswer(answerRef.current);
+        return;
+      }
+    }
     questionIdRef.current = currentQuestion.id;
 
     const session = readInterviewSession();
@@ -137,12 +150,12 @@ export function InterviewSection() {
             id="answer"
             value={answer}
             onChange={handleAnswerChange}
-            placeholder="미래의 기억을 떠올리며 상세하게 적어주세요."
+            placeholder="미래의 내가 되어 한두 문장부터 적어보세요."
             className="ko-keep"
           />
           <p className="mt-3 text-sm text-black/55">말로 입력하려면 휴대폰 키보드의 마이크 버튼을 이용해 주세요.</p>
           {saveMessage ? <p className="mt-3 text-sm font-semibold text-red-700" role="alert">{saveMessage}</p> : null}
-          <p className="mt-3 text-2xl font-medium text-black/35">{answer.length}자 / 권장 300자 이상</p>
+          <p className="mt-3 text-base font-medium text-black/55">{answer.length}자 · 짧게 시작해도 괜찮아요. 구체적인 장면을 더하면 리포트가 풍부해집니다.</p>
         </div>
         <footer className="fixed bottom-0 left-0 right-0 grid gap-4 border-t hairline bg-background px-[clamp(20px,3vw,30px)] pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 md:grid-cols-[1fr_auto_1fr] md:items-end lg:right-[360px] xl:right-[470px]">
           <div>

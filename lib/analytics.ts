@@ -127,6 +127,10 @@ export function trackInterviewStart() {
   sendAnalyticsEvent("interview_start");
 }
 
+export function trackLandingAction(action: "landing_cta_click" | "report_sample_open" | "first_answer_saved" | "interview_resume", placement: string) {
+  sendAnalyticsEvent(action, { placement, landing_version: "20260930" });
+}
+
 export function trackInterviewComplete() {
   sendAnalyticsEvent("interview_complete", { question_count: 11 });
 }

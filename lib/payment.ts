@@ -11,8 +11,8 @@ export type FutureCoordinatePaymentReceipt = {
   verifiedAt: string;
 };
 
-export function hasInterviewAnswers(session: InterviewSession) {
-  return session.answers.some((answer) => answer.answer.trim().length > 0);
+export function isInterviewReadyForAnalysis(session: InterviewSession) {
+  return Boolean(session.completedAt) && session.answers.some((answer) => answer.answer.trim().length > 0);
 }
 
 export function readPaymentReceipt(): FutureCoordinatePaymentReceipt | null {

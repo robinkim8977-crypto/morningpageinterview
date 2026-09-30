@@ -156,13 +156,14 @@ export function resetInterviewState() {
 }
 
 export function startNewInterviewSession(session: InterviewSession) {
-  clearReportStorage();
-  return saveInterviewSession({
+  const saved = saveInterviewSession({
     schemaVersion: INTERVIEW_STORAGE_VERSION,
     questionnaireVersion: QUESTIONNAIRE_VERSION,
     futureYear: session.futureYear,
     name: session.name,
-    answers: [],
+    answers: normalizeAnswers(session.answers),
     completedAt: undefined
   });
+  if (saved) clearReportStorage();
+  return saved;
 }

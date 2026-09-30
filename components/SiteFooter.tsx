@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export function SiteFooter() {
   return (
-    <footer className="site-footer border-t border-black/20 bg-[#E7E2DA] px-[clamp(20px,3vw,30px)] py-10">
-      <div className="mx-auto grid max-w-[1380px] gap-8 md:grid-cols-[1fr_auto] md:items-end">
+    <footer className="site-footer border-t border-black/20 bg-[#F6F4EE] px-[clamp(20px,3vw,48px)] pb-28 pt-10 md:pb-10">
+      <div className="mx-auto grid max-w-[1144px] gap-8 md:grid-cols-[1fr_auto] md:items-end">
         <div>
           <Link href="/" className="wordmark">
             THE MORNING PAGE INTERVIEW

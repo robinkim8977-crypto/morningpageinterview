@@ -17,7 +17,7 @@ import {
   FUTURE_COORDINATE_PRICE,
   FUTURE_COORDINATE_PRODUCT_CODE,
   FUTURE_COORDINATE_PRODUCT_NAME,
-  hasInterviewAnswers,
+  isInterviewReadyForAnalysis,
   readPaymentReceipt,
   savePaymentReceipt
 } from "@/lib/payment";
@@ -86,7 +86,7 @@ export function FutureCoordinatePurchase() {
 
   useEffect(() => {
     const storedSession = readInterviewSession();
-    setHasInterview(hasInterviewAnswers(storedSession));
+    setHasInterview(isInterviewReadyForAnalysis(storedSession));
     setCustomerName(storedSession.name.trim());
     const receipt = readPaymentReceipt();
     if (!receipt) {
@@ -211,7 +211,7 @@ export function FutureCoordinatePurchase() {
 
       await verifyPayment(response.paymentId);
       trackPurchaseSuccess();
-      router.push(hasInterviewAnswers(readInterviewSession()) ? "/future-coordinate/result" : "/start");
+      router.push(isInterviewReadyForAnalysis(readInterviewSession()) ? "/future-coordinate/result" : "/start");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "결제를 확인하는 중 오류가 발생했습니다.");
       trackPaymentError(error instanceof PaymentVerificationError ? "verification" : "request", selectedPaymentMethod.id);
@@ -270,7 +270,7 @@ export function FutureCoordinatePurchase() {
         </label>
         <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm leading-6">
           <input className="mt-1 h-4 w-4 accent-black" type="checkbox" checked={withdrawalAccepted} onChange={(event) => setWithdrawalAccepted(event.target.checked)} />
-          <span><strong>[필수]</strong> 결제 완료 후 개인화 디지털콘텐츠 제작·제공이 시작되며, 제공 개시 후 단순 변심 청약철회가 제한될 수 있음을 확인합니다. <Link className="underline underline-offset-4" href="/refund-policy">환불정책 보기</Link></span>
+          <span><strong>[필수]</strong> 결제 확인과 인터뷰 완료 후 개인화 디지털콘텐츠 제작·제공이 시작되며, 제공 개시 후 단순 변심 청약철회가 제한될 수 있음을 확인합니다. <Link className="underline underline-offset-4" href="/refund-policy">환불정책 보기</Link></span>
         </label>
       </div>
 

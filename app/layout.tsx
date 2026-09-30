@@ -9,10 +9,10 @@ const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || "
 
 export const metadata: Metadata = {
   title: {
-    default: "The Morning Page Interview",
+    default: "모닝페이지 인터뷰 | 미래의 나에게, 오늘의 길을 묻다",
     template: "%s | The Morning Page Interview"
   },
-  description: "미래의 자신과 인터뷰하고, 이미 실현된 미래를 기억하는 방식으로 미래 자아 리포트를 생성합니다.",
+  description: "미래의 내가 되어 11개의 질문에 답해보세요. 인터뷰와 미래 기억 매거진은 무료, AI 분석 리포트 미래좌표는 2,900원 선택 구매입니다.",
   keywords: ["Morning Page", "Future Interview", "미래 인터뷰", "목표 설정", "자기 회고"],
   openGraph: {
     title: "The Morning Page Interview",

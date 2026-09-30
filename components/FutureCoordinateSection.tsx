@@ -21,7 +21,7 @@ import {
   FUTURE_COORDINATE_COMMITMENT_KEY,
   isFutureCoordinateAnalysis
 } from "@/lib/future-coordinate";
-import { clearPaymentReceipt, readPaymentReceipt } from "@/lib/payment";
+import { clearPaymentReceipt, isInterviewReadyForAnalysis, readPaymentReceipt } from "@/lib/payment";
 import { readInterviewSession } from "@/lib/storage";
 import type { FutureCoordinateAnalysis, FuturePlan, FutureScene, InterviewSession } from "@/lib/types";
 
@@ -149,15 +149,15 @@ function AnalysisLoading() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ unfinished = false }: { unfinished?: boolean }) {
   return (
     <main className="page-shell min-h-screen bg-background">
       <Header />
       <section className="grid min-h-[70vh] place-items-center px-6 text-center">
         <div className="max-w-xl">
-          <h1 className="ko-keep text-[clamp(34px,5vw,58px)] font-medium leading-tight tracking-[-0.06em]">미래좌표를 만들 인터뷰가 아직 없습니다.</h1>
+          <h1 className="ko-keep text-[clamp(34px,5vw,58px)] font-medium leading-tight tracking-[-0.06em]">{unfinished ? "인터뷰를 먼저 완료해 주세요." : "미래좌표를 만들 인터뷰가 아직 없습니다."}</h1>
           <p className="ko-keep mx-auto mt-6 max-w-md leading-7 text-black/60">인터뷰를 완료하면 세 가지 장면, 하나의 방향과 지금 가능한 다음 한 걸음을 확인할 수 있어요.</p>
-          <Button asChild size="sm" className="mt-8"><Link href="/start">인터뷰 시작하기</Link></Button>
+          <Button asChild size="sm" className="mt-8"><Link href="/start">{unfinished ? "인터뷰 이어서 쓰기" : "인터뷰 시작하기"}</Link></Button>
         </div>
       </section>
     </main>
@@ -311,6 +311,7 @@ export function FutureCoordinateSection() {
   const hasTrackedReport = useRef(false);
   const fingerprint = useMemo(() => (session ? sessionFingerprint(session) : ""), [session]);
   const hasAnswers = session?.answers.some((answer) => answer.answer.trim()) ?? false;
+  const readyForAnalysis = isPreview || Boolean(session && isInterviewReadyForAnalysis(session));
 
   useEffect(() => {
     const storedSession = readInterviewSession();
@@ -336,6 +337,8 @@ export function FutureCoordinateSection() {
       }
       return;
     }
+
+    if (!readyForAnalysis) { setLoading(false); return; }
 
     if (process.env.NODE_ENV !== "development" && !paymentId) {
       setError("결제 확인 후 미래좌표 리포트를 만들 수 있습니다.");
@@ -384,7 +387,7 @@ export function FutureCoordinateSection() {
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, [fingerprint, hasAnswers, isPreview, paymentChecked, paymentId, requestIndex, session]);
+  }, [fingerprint, hasAnswers, isPreview, paymentChecked, paymentId, readyForAnalysis, requestIndex, session]);
 
   function savePromise() {
     if (!commitment.action.trim() || !commitment.duration.trim()) return;
@@ -406,6 +409,7 @@ export function FutureCoordinateSection() {
   if (!session) return <AnalysisLoading />;
   if (!hasAnswers) return <EmptyState />;
   if (loading) return <AnalysisLoading />;
+  if (!readyForAnalysis && !analysis) return <EmptyState unfinished />;
   if (error || !analysis) return <ErrorState message={error || "결과를 불러오지 못했습니다."} retryable={retryable} onRetry={() => setRequestIndex((value) => value + 1)} />;
 
   return (
