@@ -128,7 +128,7 @@ export function trackInterviewStart() {
 }
 
 export function trackLandingAction(action: "landing_cta_click" | "report_sample_open" | "first_answer_saved" | "interview_resume", placement: string) {
-  sendAnalyticsEvent(action, { placement, landing_version: "20260930" });
+  sendAnalyticsEvent(action, { placement, landing_version: "20261007" });
 }
 
 export function trackInterviewComplete() {

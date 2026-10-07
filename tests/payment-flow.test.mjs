@@ -10,6 +10,7 @@ const state = {
   openaiModes: [],
   portoneCalls: 0,
   openaiCalls: 0,
+  openaiBody: null,
   redisCalls: 0
 };
 
@@ -144,6 +145,7 @@ async function mockFetch(input, init) {
 
   if (url.hostname === "mock.openai.test") {
     state.openaiCalls += 1;
+    state.openaiBody = await requestBody(input, init);
     const mode = state.openaiModes.shift() || "success";
     if (mode === "failure") {
       return jsonResponse(
@@ -273,6 +275,18 @@ test("결제부터 AI 생성과 운영 복구까지 외부 비용 없이 검증�
     assert.equal(record.status, "completed");
     assert.equal(record.diagnostics.openaiRequestId, "openai-request-1");
     assert.match(record.diagnostics.openaiClientRequestId, /^fc-/);
+  });
+
+  await t.test("새 질문지는 습관 질문 9를 사용하고 모름 응답을 AI 근거에서 제외한다", async () => {
+    resetState();
+    const value = { ...session(), questionnaireVersion: 3, answers: [{questionId:1,answer:"차분한"},{questionId:2,answer:"아직 모르겠어요"},{questionId:9,answer:"부탁받으면 바로 답하지 않고 생각했어요."},{questionId:11,answer:"내 시간을 먼저 지켜도 괜찮아."}] };
+    const response = await createReport(new Request("https://app.test/api/report", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({session:value,paymentId:"fc-new-questionnaire"})}));
+    assert.equal(response.status,200);
+    assert.match(state.openaiBody.instructions,/질문 9의 '작은 습관'/);
+    assert.match(state.openaiBody.instructions,/질문 8~10을 우선/);
+    assert.match(state.openaiBody.input,/부탁받으면 바로 답하지 않고/);
+    assert.doesNotMatch(state.openaiBody.input,/아직 모르겠어요/);
+    assert.match(state.openaiBody.input,/미래의 나는 어떤 분위기/);
   });
 
   await t.test("동시 생성 요청은 OpenAI를 한 번만 호출한다", async () => {

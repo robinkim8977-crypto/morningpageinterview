@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { questions } from "@/data/questions";
+import { questionsForVersion, hasMeaningfulAnswer } from "@/data/questions";
 import { createPreviewAnalysis, isFutureCoordinateAnalysis } from "@/lib/future-coordinate";
 import {
   configuredPaymentUsageLedger,
@@ -110,11 +110,11 @@ function parseSession(value: unknown): InterviewSession | null {
   if (typeof session.name !== "string" || typeof session.futureYear !== "number" || !Array.isArray(session.answers)) return null;
 
   const answers = session.answers
-    .filter((answer) => answer && typeof answer.questionId === "number" && typeof answer.answer === "string")
+    .filter((answer) => answer && Number.isInteger(answer.questionId) && answer.questionId >= 1 && answer.questionId <= 11 && typeof answer.answer === "string")
     .map((answer) => ({ questionId: answer.questionId, answer: answer.answer.slice(0, 8000) }));
 
-  if (answers.length === 0) return null;
-  return { name: session.name.slice(0, 80), futureYear: session.futureYear, answers };
+  if (!Number.isInteger(session.futureYear) || session.futureYear < 1 || session.futureYear > 100 || !answers.some(a => hasMeaningfulAnswer(a.answer))) return null;
+  return { schemaVersion: session.questionnaireVersion === 3 ? session.schemaVersion : undefined, questionnaireVersion: session.questionnaireVersion === 3 ? 3 : undefined, name: session.name.slice(0, 80), futureYear: session.futureYear, answers };
 }
 
 function getOutputText(response: unknown) {
@@ -239,9 +239,11 @@ export async function POST(request: Request) {
     }
   }
 
+  const questionnaire = questionsForVersion(session.questionnaireVersion);
   const interview = session.answers
+    .filter(answer => hasMeaningfulAnswer(answer.answer))
     .map((answer) => {
-      const question = questions.find((item) => item.id === answer.questionId);
+      const question = questionnaire.find((item) => item.id === answer.questionId);
       const questionLead = question?.question.split("\n\n")[0] ?? `질문 ${answer.questionId}`;
       const context = question ? `${question.phase} · ${question.theme}` : "인터뷰";
       return `[질문 ${answer.questionId} | ${context}]\n${questionLead}\n\n[답변]\n${answer.answer}`;
@@ -270,6 +272,10 @@ export async function POST(request: Request) {
         instructions:
           `당신은 미래 인터뷰를 현재의 다음 한 걸음으로 번역하는 한국어 에디터입니다. 미래를 빠르게 달성하라고 압박하지 말고, 현재와 미래 사이의 거리를 존중해 해석하세요.
 
+답변 해석 규칙:
+- 선택형 응답은 원하는 미래의 설정이며 현재 성격검사나 진단이 아닙니다. '직접 입력:'은 사용자가 직접 쓴 표현입니다.
+- 빈 답변과 '아직 모르겠어요'는 근거로 인용하지 않습니다. 자료가 부족하면 그 한계를 밝히고, 있는 표현만 해석합니다. 모든 장면과 행동의 질문 번호는 실제 내용이 있는 답변만 참조합니다. 같은 근거를 다른 관점으로 해석할 수 있지만 새로운 사실을 발명하지 않습니다.
+
 핵심 목표:
 - 인터뷰 전체에서 서로 다른 역할의 미래 장면을 정확히 3개 고릅니다.
 - 장면은 '삶의 모습 → 변화의 증거 → 다음 확장' 순서여야 합니다.
@@ -277,9 +283,9 @@ export async function POST(request: Request) {
 - 그 하나의 방향을 위한 통합 30·90·365일 로드맵과 72시간 첫 행동을 만듭니다.
 
 장면 역할:
-1. role=life: 미래의 공간, 일하는 방식, 생활 리듬, 관계와 환경. 질문 1~3과 9를 우선 근거로 삼습니다.
-2. role=turning-point: 변화나 성취를 처음 실감한 전환점, 타인의 반응, 자기 확신, 중요한 선택. 질문 4~8을 우선 근거로 삼습니다.
-3. role=expansion: 현재 성취 이후 다시 향하는 꿈, 새로운 역할, 다른 사람에게 확장되는 영향. 질문 9~11을 우선 근거로 삼습니다.
+1. role=life: 미래의 공간, 일하는 방식, 생활 리듬, 관계와 환경. ${session.questionnaireVersion === 3 ? "질문 1~7을 우선 근거로 삼습니다. 선택형 성격·관심·가치만으로 답변에 없는 장면이나 직업을 발명하지 않습니다." : "질문 1~3과 9를 우선 근거로 삼습니다."}
+2. role=turning-point: 변화나 성취를 처음 실감한 전환점, 타인의 반응, 자기 확신, 중요한 선택. ${session.questionnaireVersion === 3 ? "질문 8~10을 우선 근거로 삼습니다." : "질문 4~8을 우선 근거로 삼습니다."}
+3. role=expansion: ${session.questionnaireVersion === 3 ? "미래의 삶에서 현재로 가져오고 싶은 방식과 다음 선택. 질문 3, 9~11을 우선 근거로 삼습니다. 새로운 꿈이나 타인에게 기여하는 역할을 묻지 않았으므로 그것을 임의로 추가하지 않습니다." : "현재 성취 이후 다시 향하는 꿈, 새로운 역할, 다른 사람에게 확장되는 영향. 질문 9~11을 우선 근거로 삼습니다."}
 
 각 장면 규칙:
 - id는 scene-1, scene-2, scene-3 순서로 씁니다.
@@ -318,7 +324,7 @@ export async function POST(request: Request) {
 - '보고서 1부', '지표표', '운영 가이드', '연간 리포트', '협업 연락망' 같은 기업 컨설팅 표현을 피합니다. 측정 가능성은 유지하되 생활 언어로 씁니다.
 
 72시간 첫 행동 규칙:
-- firstAction은 질문 5의 '작은 습관'을 최우선으로 사용합니다. 없으면 질문 7의 실제 극복 행동, 반복 행동, 지금 가능한 최소 행동 순서로 고릅니다.
+- firstAction은 질문 ${session.questionnaireVersion === 3 ? 9 : 5}의 '작은 습관'을 최우선으로 사용합니다. 없으면 질문 ${session.questionnaireVersion === 3 ? 10 : 7}의 실제 극복 행동, 반복 행동, 지금 가능한 최소 행동 순서로 고릅니다.
 - 일반적인 자기계발 행동을 만들지 말고 인터뷰에서 사용자가 직접 말한 행동을 구체화합니다.
 - 미래 습관의 핵심 방식은 유지하되 미래의 직업·관계·장소는 제거합니다. 사용자의 현재 상황이 확인되지 않았으므로 회의, 팀원, 직장, 고객, 배우자, 자녀, 사업, 사무실, 작업실이 있어야만 할 수 있는 행동을 제안하지 않습니다.
 - 60분 안에, 가능하면 5~30분 안에 끝나야 하며 조사 프로젝트, 사업계획, 포트폴리오 전체 수정은 금지합니다.

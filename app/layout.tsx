@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     default: "모닝페이지 인터뷰 | 미래의 나에게, 오늘의 길을 묻다",
     template: "%s | The Morning Page Interview"
   },
-  description: "미래의 내가 되어 11개의 질문에 답해보세요. 인터뷰와 미래 기억 매거진은 무료, AI 분석 리포트 미래좌표는 2,900원 선택 구매입니다.",
+  description: "성격과 관심을 고르고, 미래의 하루를 상상해보세요. 5개 챕터와 11개의 질문으로 미래의 나를 만듭니다. 인터뷰와 미래 기억 매거진은 무료, AI 분석 리포트 미래좌표는 2,900원 선택 구매입니다.",
   keywords: ["Morning Page", "Future Interview", "미래 인터뷰", "목표 설정", "자기 회고"],
   openGraph: {
     title: "The Morning Page Interview",

@@ -92,7 +92,7 @@ export function readInterviewSession(): InterviewSession {
 
     if (
       parsed.schemaVersion !== INTERVIEW_STORAGE_VERSION ||
-      parsed.questionnaireVersion !== QUESTIONNAIRE_VERSION
+      ![2, QUESTIONNAIRE_VERSION].includes(parsed.questionnaireVersion ?? 0)
     ) {
       removeStoredSession();
       return emptySession;
@@ -100,6 +100,7 @@ export function readInterviewSession(): InterviewSession {
 
     return {
       ...emptySession,
+      questionnaireVersion: parsed.questionnaireVersion,
       futureYear: typeof parsed.futureYear === "number" ? parsed.futureYear : 0,
       name: typeof parsed.name === "string" ? parsed.name : "",
       answers: normalizeAnswers(parsed.answers),
@@ -117,7 +118,7 @@ export function saveInterviewSession(session: InterviewSession) {
       INTERVIEW_STORAGE_KEY,
       JSON.stringify({
         schemaVersion: INTERVIEW_STORAGE_VERSION,
-        questionnaireVersion: QUESTIONNAIRE_VERSION,
+        questionnaireVersion: session.questionnaireVersion ?? QUESTIONNAIRE_VERSION,
         futureYear: session.futureYear,
         name: session.name,
         answers: normalizeAnswers(session.answers),
@@ -156,6 +157,7 @@ export function resetInterviewState() {
 }
 
 export function startNewInterviewSession(session: InterviewSession) {
+  const previous = readInterviewSession();
   const saved = saveInterviewSession({
     schemaVersion: INTERVIEW_STORAGE_VERSION,
     questionnaireVersion: QUESTIONNAIRE_VERSION,
@@ -164,6 +166,9 @@ export function startNewInterviewSession(session: InterviewSession) {
     answers: normalizeAnswers(session.answers),
     completedAt: undefined
   });
-  if (saved) clearReportStorage();
+  if (saved) {
+    clearReportStorage();
+    if (previous.completedAt) clearPaymentReceipt();
+  }
   return saved;
 }

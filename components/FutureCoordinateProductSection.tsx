@@ -15,7 +15,7 @@ const deliverables = [
 
 const roadmap = [
   { days: "30", stage: "DISCOVER", title: "발견", copy: "지금의 삶에서 이미 시작할 수 있는 기록과 탐색으로 나만의 기준을 발견합니다." },
-  { days: "90", stage: "EXPERIMENT", title: "실험", copy: "생각을 작은 결과물로 만들고, 세상과 한 번 접촉해보는 실험을 제안합니다." },
+  { days: "90", stage: "EXPERIMENT", title: "실험", copy: "발견한 기준을 생활 리듬, 관계, 시간 사용이나 작은 선택에 적용하는 실험을 제안합니다." },
   { days: "365", stage: "BUILD", title: "축적", copy: "미래를 서둘러 완성하지 않고, 그 미래가 가능해지는 경험과 방식을 축적합니다." }
 ];
 
@@ -43,20 +43,19 @@ export function FutureCoordinateProductSection() {
             <span className="rounded-full bg-black px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-white">1회 결제 · 2,900원</span>
           </div>
           <h1 className="ko-keep text-[clamp(46px,6vw,82px)] font-medium leading-[0.98] tracking-[-0.075em]">
-            미래와 현재 사이의
+            미래 좌표
             <br />
-            다음 한 걸음
+            설정하기
           </h1>
           <p className="ko-keep mt-8 max-w-2xl text-base font-medium leading-8 text-black/64">
-            미래좌표는 인터뷰를 다시 요약하는 리포트가 아닙니다. 답변 속에서 가장 중요한 세 장면을 발견하고,
-            그 장면들이 가리키는 하나의 방향과 지금 가능한 다음 행동을 AI가 함께 찾습니다.
+            정체성은 내가 나에 대해 만들어가는 이야기입니다. 11개의 질문으로 설정한 미래의 나를 AI가 분석해, 세 장면을 잇는 하나의 방향으로 정리합니다. 미래 장면에서 원하는 삶의 기준을 찾고, 그 방향으로 가고 있는지 스스로 살펴볼 수 있는 좌표를 제안합니다. 앞으로 시험해볼 행동을 통해 원하는 미래에 가까워지는 선택을 돕습니다.
           </p>
           <div className="mt-10 flex flex-wrap items-end gap-x-7 gap-y-4 border-y border-black/20 py-6">
             <div>
               <p className="text-xs font-bold tracking-[0.12em] text-black/42">1회 결제</p>
               <p className="mt-1 text-4xl font-semibold tracking-[-0.05em]">2,900원</p>
             </div>
-            <p className="ko-keep max-w-md text-xs leading-5 text-black/48">정기결제 없이 한 번만 결제합니다. 결제 완료 후 입력한 인터뷰 답변을 바탕으로 개인화 리포트 생성이 시작됩니다.</p>
+            <p className="ko-keep max-w-md text-xs leading-5 text-black/48">정기결제 없이 한 번만 결제합니다. 결제 완료 후 입력한 인터뷰 답변을 바탕으로 개인화 리포트가 생성됩니다.</p>
           </div>
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <Button asChild size="sm" className="min-w-52"><a href="#purchase">구매 안내 확인하기 <ArrowRight size={14} /></a></Button>
@@ -66,7 +65,7 @@ export function FutureCoordinateProductSection() {
               </Button>
             ) : null}
           </div>
-          <p className="ko-keep mt-4 text-xs leading-5 text-black/44">결제는 한 번만 진행되며, 결제와 인터뷰가 모두 완료되면 개인화 리포트 생성이 시작됩니다.</p>
+          <p className="ko-keep mt-4 text-xs leading-5 text-black/44">결제는 한 번만 진행되며, 결제와 인터뷰가 모두 완료되면 개인화 리포트가 생성됩니다.</p>
         </div>
       </section>
 
@@ -94,7 +93,7 @@ export function FutureCoordinateProductSection() {
             {[
               ["/images/future-coordinate-scene-light-shadow.png", "01", "삶의 모습", "어떤 공간과 리듬 속에서 살아가고 일하고 있는지"],
               ["/images/future-coordinate-scene-water-light.png", "02", "변화의 증거", "성취와 변화를 처음 실감하고 자기 확신을 얻은 순간"],
-              ["/images/future-coordinate-scene-ripples.png", "03", "다음 확장", "현재의 성취 이후 다시 향하고 싶은 다음 꿈과 역할"]
+              ["/images/future-coordinate-scene-ripples.png", "03", "다음 확장", "미래의 삶에서 현재로 가져오고 싶은 방식과 다음 선택"]
             ].map(([src, number, title, copy]) => (
               <article key={number} className="text-left">
                 <Image src={src} alt="" width={498} height={814} quality={95} className="h-[440px] w-full object-cover" />
@@ -133,13 +132,13 @@ export function FutureCoordinateProductSection() {
         <div>
           <p className="text-xs font-bold tracking-[0.16em] text-black/42">72 HOURS · FIRST ACTION</p>
           <h2 className="ko-keep mt-4 text-[clamp(36px,4.8vw,62px)] font-medium leading-[1.04] tracking-[-0.065em]">오늘로 가져올 수 있는 가장 작은 행동</h2>
-          <p className="ko-keep mt-7 max-w-xl text-base leading-8 text-black/60">미래의 당신이 중요하다고 말한 습관과 반복적인 행동 중, 지금 15분에서 60분 안에 시작할 수 있는 하나를 제안합니다. 마지막 약속은 이용자가 직접 고쳐 적고 현재 브라우저에 저장할 수 있습니다.</p>
+          <p className="ko-keep mt-7 max-w-xl text-base leading-8 text-black/60">미래의 당신이 중요하다고 말한 습관과 반복적인 행동 중, 지금 5분에서 30분 안에, 길어도 60분 안에 시험할 수 있는 하나를 제안합니다. 마지막 약속은 이용자가 직접 고쳐 적고 현재 브라우저에 저장할 수 있습니다.</p>
         </div>
       </section>
 
       <section id="purchase" className="scroll-mt-8 px-[clamp(20px,6vw,86px)] py-20 text-center md:py-28">
         <p className="text-xs font-bold tracking-[0.16em] text-black/42">ONE-TIME PURCHASE</p>
-        <h2 className="ko-keep mx-auto mt-4 max-w-3xl text-[clamp(34px,4.5vw,58px)] font-medium leading-[1.08] tracking-[-0.06em]">미래와 현재 사이의 다음 한 걸음을 만나보세요</h2>
+        <h2 className="ko-keep mx-auto mt-4 max-w-3xl text-[clamp(34px,4.5vw,58px)] font-medium leading-[1.08] tracking-[-0.06em]">미래 분석 & 좌표 설정하기</h2>
         <p className="ko-keep mx-auto mt-6 max-w-xl text-sm leading-7 text-black/56 md:text-base">2,900원 1회 결제로 이용합니다. 인터뷰를 아직 완료하지 않았다면 결제 후 인터뷰를 이어갈 수 있습니다.</p>
         <div className="mt-9"><FutureCoordinatePurchase /></div>
         <div className="mt-8"><Button asChild size="sm" variant="outline" className="min-w-52"><Link href="/start">무료 인터뷰 시작하기 <ArrowRight size={14} /></Link></Button></div>

@@ -1,3 +1,4 @@
+import { hasMeaningfulAnswer } from "@/data/questions";
 import type { InterviewSession } from "@/lib/types";
 
 export const FUTURE_COORDINATE_PRODUCT_CODE = "future-coordinate-report-v1";
@@ -12,7 +13,7 @@ export type FutureCoordinatePaymentReceipt = {
 };
 
 export function isInterviewReadyForAnalysis(session: InterviewSession) {
-  return Boolean(session.completedAt) && session.answers.some((answer) => answer.answer.trim().length > 0);
+  return Boolean(session.completedAt) && session.answers.some((answer) => hasMeaningfulAnswer(answer.answer));
 }
 
 export function readPaymentReceipt(): FutureCoordinatePaymentReceipt | null {

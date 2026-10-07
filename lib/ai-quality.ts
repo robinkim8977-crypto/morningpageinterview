@@ -1,3 +1,4 @@
+import { hasMeaningfulAnswer } from "@/data/questions";
 import { isFutureCoordinateAnalysis } from "@/lib/future-coordinate";
 import type { FutureCoordinateAnalysis, InterviewSession } from "@/lib/types";
 
@@ -173,7 +174,7 @@ export function evaluateAiQuality(
   const report = candidate;
   const output = reportText(report);
   const source = interviewText(session);
-  const answeredIds = new Set(session.answers.filter((answer) => answer.answer.trim()).map((answer) => answer.questionId));
+  const answeredIds = new Set(session.answers.filter((answer) => hasMeaningfulAnswer(answer.answer)).map((answer) => answer.questionId));
   const checks: AiQualityCheck[] = [];
 
   checks.push(check("schema", "필수 결과 형식", "structure", "critical", 15, 15, "JSON 형식과 장면·로드맵 구조가 유효합니다."));
@@ -192,7 +193,7 @@ export function evaluateAiQuality(
   ));
 
   const misalignedRoles = report.scenes
-    .filter((scene) => !scene.sourceQuestionIds.some((id) => ROLE_QUESTION_IDS[scene.role].has(id)))
+    .filter((scene) => !scene.sourceQuestionIds.some((id) => (session.questionnaireVersion === 3 ? ({ life: new Set([1,2,3,4,5,6,7]), "turning-point": new Set([8,9,10]), expansion: new Set([3,9,10,11]) })[scene.role] : ROLE_QUESTION_IDS[scene.role]).has(id)))
     .map((scene) => scene.role);
   checks.push(check(
     "role-evidence-alignment",
@@ -219,8 +220,8 @@ export function evaluateAiQuality(
       : `${anchorGroups.length}개 핵심 단서 묶음 중 ${matchedAnchorGroups.length}개를 반영했습니다.`
   ));
 
-  const preferredAnswer = session.answers.find((answer) => answer.questionId === 5 && answer.answer.trim())
-    ?? session.answers.find((answer) => answer.questionId === 7 && answer.answer.trim());
+  const preferredAnswer = session.answers.find((answer) => answer.questionId === (session.questionnaireVersion === 3 ? 9 : 5) && answer.answer.trim())
+    ?? session.answers.find((answer) => answer.questionId === (session.questionnaireVersion === 3 ? 10 : 7) && answer.answer.trim());
   const preferredId = preferredAnswer?.questionId;
   const citesPreferredAnswer = preferredId ? report.firstAction.sourceQuestionIds.includes(preferredId) : true;
   const actionEvidenceText = `${report.firstAction.action}\n${report.firstAction.reason}`;

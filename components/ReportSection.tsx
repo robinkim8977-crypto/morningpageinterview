@@ -5,10 +5,13 @@ import Link from "next/link";
 import { ReportImageSave } from "@/components/ReportImageSave";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { questions } from "@/data/questions";
+import { questionsForVersion, hasMeaningfulAnswer } from "@/data/questions";
+import { FutureSelfCard } from "./FutureSelfCard";
+import { FUTURE_COORDINATE_PRICE } from "@/lib/payment";
+import s from "./FutureSelf.module.css";
 import { trackPdfDownload, trackReportGenerated } from "@/lib/analytics";
 import { readPaymentReceipt } from "@/lib/payment";
-import { readInterviewSession, resetInterviewState } from "@/lib/storage";
+import { readInterviewSession } from "@/lib/storage";
 import type { InterviewSession } from "@/lib/types";
 
 type MagazineSection = {
@@ -34,8 +37,8 @@ function answerFor(session: InterviewSession, questionId: number) {
   return session.answers.find((answer) => answer.questionId === questionId)?.answer ?? "";
 }
 
-function questionLead(questionId: number) {
-  return questions.find((question) => question.id === questionId)?.question.split("\n\n")[0] ?? "";
+function questionLead(questionId: number, version?: number) {
+  return questionsForVersion(version).find((question) => question.id === questionId)?.question.split("\n\n")[0] ?? "";
 }
 
 function normalizeAnswer(value: string) {
@@ -108,6 +111,10 @@ function safeFileName(name: string) {
 }
 
 function buildMagazine(session: InterviewSession): MemoryMagazine {
+  if (session.questionnaireVersion === 3) {
+    const titles = ["미래의 성격","좋아하는 일","지키고 싶은 가치","하루를 시작하는 곳","아침의 작은 행동","좋아하는 하루의 순간","함께하는 사람과 시간","변화를 느낀 순간","나를 데려온 작은 습관","내 페이스를 되찾는 방법"];
+    return { name: session.name.trim() || "나", futureYear: currentFutureYear(session.futureYear), sections: questionsForVersion(3).filter(q => q.id < 11 && hasMeaningfulAnswer(answerFor(session,q.id))).map(q => ({ number: String(q.id).padStart(2,"0"), title: titles[q.id-1], question: questionLead(q.id,3), body: answerFor(session,q.id) })), hardTimeSections: [], messageToPresent: answerFor(session,11) };
+  }
   const sectionData: MagazineSection[] = [
     {
       number: "01",
@@ -204,13 +211,14 @@ function sectionHtml(section: MagazineSection) {
 }
 
 function downloadMemoryPdf(magazine: MemoryMagazine) {
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+  const printWindow = window.open("", "_blank");
 
   if (!printWindow) {
     window.print();
     return;
   }
 
+  printWindow.opener = null;
   const sections = magazine.sections.map(sectionHtml).join("");
   const hardTime =
     magazine.hardTimeSections.length > 0
@@ -395,14 +403,14 @@ function FutureCoordinateInvitation({ hasPayment }: { hasPayment: boolean }) {
       <div className="grid gap-8 bg-[#DDD2C5] p-7 md:grid-cols-[1fr_auto] md:items-end md:p-10">
         <div>
           <p className="mb-3 text-xs font-bold tracking-[0.12em] text-black/50">PREMIUM AI ANALYSIS</p>
-          <h2 className="ko-keep text-[clamp(28px,4vw,44px)] font-medium leading-tight tracking-[-0.055em]">미래 좌표에 깃발을 세우세요</h2>
+          <h2 className="ko-keep text-[clamp(28px,4vw,44px)] font-medium leading-tight tracking-[-0.055em]">미래 좌표 설정하기</h2>
           <p className="ko-keep mt-4 max-w-xl text-sm font-medium leading-6 text-black/60">
-            인터뷰에서 발견한 세 장면을 AI가 하나의 방향으로 연결하고, 지금부터 이어갈 30·90·365일 좌표를 제안합니다.
+            11개의 질문으로 그린 미래의 나를 AI가 해석해, 세 장면을 잇는 하나의 방향으로 정리합니다. 원하는 삶의 기준을 살펴보고, 30·90·365일 좌표와 지금 시험할 작은 행동을 제안합니다.
           </p>
         </div>
         <Button asChild size="sm" className="min-w-44">
           <Link href={hasPayment ? "/future-coordinate/result" : "/future-coordinate"}>
-            {hasPayment ? "미래좌표 결과 보기" : "미래좌표 알아보기"}
+            {hasPayment ? "미래좌표 결과 보기" : "미래 분석 & 좌표 설정 2,900원"}
           </Link>
         </Button>
       </div>
@@ -471,6 +479,7 @@ export function ReportSection() {
     return <EmptyReportState />;
   }
 
+  if (session?.questionnaireVersion === 3) return <main className={s.page}><header className={s.header}><Link href="/" className={s.brand}>THE MORNING PAGE<small>INTERVIEW / 미래 기억</small></Link><Link href="/start">다른 미래 그리기</Link></header><section className={s.shell}><p className={s.eyebrow}>YOUR FIRST FUTURE / 무료 기록</p><h1 className={s.title}>{magazine.name}님의<br/>미래 기억이 도착했어요.</h1><p className={s.description}>{session.futureYear}년 후의 나를 그린 첫 번째 버전입니다.<br/>내가 고른 모습과 직접 쓴 장면을 한 편의 기록으로 모았어요.</p><div className={s.reveal}><FutureSelfCard session={session}/></div><p className={s.fine}>선택과 답변을 그대로 정리한 기록입니다. AI 해석은 포함하지 않습니다.</p>{magazine.sections.map(section=><article className={s.story} key={section.number}><p className={s.eyebrow}>{section.number} / {section.title}</p><h2>{section.question}</h2>{renderParagraphs(section.body)}</article>)}{hasMeaningfulAnswer(magazine.messageToPresent)&&<article className={s.story}><p className={s.eyebrow}>11 / 현재로 보내기</p><h2>지금의 나에게 보내는 메시지</h2>{renderParagraphs(magazine.messageToPresent)}</article>}<section className={s.premium}><p className={s.eyebrow}>FUTURE COORDINATION</p><h2 className={s.title}>이 미래가 내게 의미하는 것은?</h2><p className={s.description}>정체성은 내가 나에 대해 만들어가는 이야기입니다. 11개 질문의 선택과 답변을 AI가 해석해 세 장면과 하나의 방향으로 정리합니다.</p><p className={s.description}>원하는 삶의 기준을 살펴볼 30·90·365일 좌표와, 지금 시험할 작은 행동을 제안합니다.</p><Link className={s.button} href={hasFutureCoordinatePayment?"/future-coordinate/result":"/future-coordinate#purchase"}>{hasFutureCoordinatePayment?"구매한 미래좌표 보기":`미래 분석 & 좌표 설정 ${FUTURE_COORDINATE_PRICE.toLocaleString("ko-KR")}원`} ↗</Link><p className={s.fine}>선택 구매 · 1회 결제 · 결제 확인과 인터뷰 완료 후 AI 분석<br/>결과는 자기성찰용 참고 콘텐츠이며 미래의 실현을 보장하지 않습니다.</p></section><div className={s.resultActions}><ReportImageSave title={`${magazine.name}님의 미래 기억`} sections={[{title:`${magazine.futureYear}년의 미래 기억`,body:`${magazine.name}님의 인터뷰`},...magazine.sections.map(section=>({title:section.title,body:section.body})),...(hasMeaningfulAnswer(magazine.messageToPresent)?[{title:"현재의 나에게 보내는 메시지",body:magazine.messageToPresent}]:[])]}/><button className={s.button} onClick={()=>{trackPdfDownload("free");downloadMemoryPdf(magazine)}}>PDF 저장</button>{!hasFutureCoordinatePayment&&<Link className={`${s.button} ${s.secondary}`} href="/interview">답변 다듬기</Link>}</div></section></main>;
   return (
     <main className="page-shell min-h-screen bg-background">
       <Header />
@@ -505,7 +514,7 @@ export function ReportSection() {
             PDF 다운로드
           </Button>
           <Button asChild size="sm" className="min-w-36">
-            <Link href="/start" onClick={() => resetInterviewState()}>
+            <Link href="/start">
               인터뷰 다시하기
             </Link>
           </Button>
