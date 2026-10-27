@@ -14,7 +14,7 @@ export type InterviewSession = {
 
 export type FuturePlan = {
   evidence?: { questionId: number; quote: string };
-  days: 30 | 90 | 365;
+  days: 30 | 60 | 365;
   stage: "NOTICE" | "EXPERIMENT" | "BUILD";
   goal: string;
   description: string;
@@ -48,6 +48,9 @@ export type FutureFirstAction = {
 };
 
 export type FutureCoordinateAnalysis = {
+  introduction?: { title: string; description: string };
+  dailySchedule?: { time: string; activity: string; detail: string }[];
+  habits?: { title: string; action: string; cue: string; reason: string }[];
   scenes: [FutureScene, FutureScene, FutureScene];
   direction: FutureDirection;
   roadmap: [FuturePlan, FuturePlan, FuturePlan];

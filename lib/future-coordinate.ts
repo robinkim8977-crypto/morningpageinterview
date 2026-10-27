@@ -2,7 +2,7 @@ import type { FutureCoordinateAnalysis, FuturePlan, FutureScene, InterviewSessio
 
 export const FUTURE_COORDINATE_ANALYSIS_KEY = "morning-page-future-coordinate-analysis";
 export const FUTURE_COORDINATE_COMMITMENT_KEY = "morning-page-future-coordinate-commitment";
-export const FUTURE_COORDINATE_ANALYSIS_VERSION = 4;
+export const FUTURE_COORDINATE_ANALYSIS_VERSION = 5;
 
 function answerFor(session: InterviewSession, questionId: number) {
   return session.answers.find((answer) => answer.questionId === questionId)?.answer.trim() ?? "";
@@ -73,6 +73,22 @@ export function createPreviewAnalysis(session: InterviewSession): FutureCoordina
   ];
 
   return {
+    introduction: { title: "나의 리듬으로 만들고, 사람들과 나누는 사람", description: previewSentence(answerFor(session, 1), "좋아하는 일에 몰입하며 건강과 관계를 함께 지키는 삶을 그립니다.") },
+    dailySchedule: [
+      { time: "07:00", activity: "조용한 시작", detail: "몸을 깨우고 오늘 가장 중요한 일을 고릅니다." },
+      { time: "09:00", activity: "나만의 몰입 시간", detail: "방해를 줄인 공간에서 좋아하는 작업에 집중합니다." },
+      { time: "12:00", activity: "잠시 멈추고 회복하기", detail: "식사와 산책으로 오전과 오후 사이에 여백을 둡니다." },
+      { time: "14:00", activity: "아이디어를 나누는 오후", detail: "사람들과 대화하고 작업의 다음 가능성을 살펴봅니다." },
+      { time: "19:00", activity: "소중한 관계로 돌아오기", detail: "가까운 사람과 식사하며 천천히 시간을 보냅니다." },
+      { time: "22:00", activity: "내일을 위한 마무리", detail: "오늘 좋았던 순간을 떠올리고 충분히 쉽니다." }
+    ],
+    habits: [
+      { title: "중요한 일 먼저", action: "가장 하고 싶은 일에 20분 집중하기", cue: "하루의 첫 여유 시간에", reason: "몰입할 시간을 스스로 선택하는 기준을 연습합니다." },
+      { title: "취향 수집", action: "마음에 드는 작업 하나와 그 이유 남기기", cue: "좋아하는 것을 만났을 때", reason: "나의 선택 기준을 발견합니다." },
+      { title: "몸에 여백 주기", action: "화면에서 떨어져 10분 걷기", cue: "오래 앉아 있었을 때", reason: "건강과 지속 가능한 리듬을 함께 지킵니다." },
+      { title: "관계에 집중하기", action: "가까운 사람의 이야기에 질문 하나 건네기", cue: "편안한 대화 중에", reason: "성과와 관계가 함께 있는 삶을 연습합니다." },
+      { title: "작게 마무리하기", action: "오늘 잘 맞았던 선택 한 가지 돌아보기", cue: "하루를 마칠 때", reason: "내 방식으로 살아가는 감각을 쌓습니다." }
+    ],
     scenes,
     direction: {
       title: "나의 기준으로 선택하고, 그 기준을 세상과 나누는 삶",
@@ -81,7 +97,7 @@ export function createPreviewAnalysis(session: InterviewSession): FutureCoordina
     },
     roadmap: [
       previewPlan(30, "NOTICE", "나만의 기준을 한 장에 모으기", "이미 마음이 가는 것들을 관찰해 다음 선택의 기준을 발견합니다.", ["좋아하는 작업 20개에 왜 좋은지 한 문장씩 적기", "반복해서 등장한 기준 5개를 골라 한 장에 모으기"], "다음 선택에서 사용할 나의 기준 한 장"),
-      previewPlan(90, "EXPERIMENT", "발견한 기준으로 일하는 방식 시험하기", "30일 동안 발견한 기준 하나를 실제 작업과 시간 사용에 적용해봅니다.", ["다음 작은 작업 하나에 발견한 기준 1개 적용하기", "3주 동안 작업 뒤 에너지가 생긴 점과 막힌 점을 짧게 남기기"], "나에게 맞는 작업 방식에 대한 실제 감각"),
+      previewPlan(60, "EXPERIMENT", "발견한 기준으로 일하는 방식 시험하기", "30일 동안 발견한 기준 하나를 실제 작업과 시간 사용에 적용해봅니다.", ["다음 작은 작업 하나에 발견한 기준 1개 적용하기", "3주 동안 작업 뒤 에너지가 생긴 점과 막힌 점을 짧게 남기기"], "나에게 맞는 작업 방식에 대한 실제 감각"),
       previewPlan(365, "BUILD", "효과가 있었던 방식을 삶에 쌓기", "미래의 공간이나 사업을 서두르지 않고, 실험에서 효과가 있었던 방식을 반복해 나의 구조로 만듭니다.", ["계절마다 에너지가 생긴 작업과 지친 작업을 돌아보기", "잘 맞았던 기준을 다음 작업에도 적용하며 나만의 원칙 5개로 다듬기"], "앞으로의 선택을 지탱할 기준과 경험의 축적")
     ],
     firstAction: {
@@ -107,7 +123,7 @@ function isPlan(value: unknown): value is FuturePlan {
   if (!value || typeof value !== "object") return false;
   const item = value as Partial<FuturePlan>;
   return (
-    (item.days === 30 || item.days === 90 || item.days === 365) &&
+    (item.days === 30 || item.days === 60 || item.days === 365) &&
     (item.stage === "NOTICE" || item.stage === "EXPERIMENT" || item.stage === "BUILD") &&
     (item.evidence === undefined || (typeof item.evidence === "object" && item.evidence !== null
       && Number.isInteger(item.evidence.questionId) && item.evidence.questionId >= 1 && item.evidence.questionId <= 11
@@ -119,9 +135,16 @@ function isPlan(value: unknown): value is FuturePlan {
   );
 }
 
-export function isFutureCoordinateAnalysis(value: unknown): value is FutureCoordinateAnalysis {
+export function isFutureCoordinateAnalysis(value: unknown, allowLegacy = false): value is FutureCoordinateAnalysis {
   if (!value || typeof value !== "object") return false;
   const analysis = value as Partial<FutureCoordinateAnalysis>;
+  const nonempty = (v: unknown) => typeof v === "string" && v.trim().length > 0;
+  if (!allowLegacy) {
+    if (!analysis.introduction || !nonempty(analysis.introduction.title) || !nonempty(analysis.introduction.description)) return false;
+    if (!Array.isArray(analysis.dailySchedule) || analysis.dailySchedule.length < 4 || analysis.dailySchedule.length > 8 || !analysis.dailySchedule.every(s => s && nonempty(s.time) && nonempty(s.activity) && nonempty(s.detail))) return false;
+    if (!Array.isArray(analysis.habits) || analysis.habits.length !== 5 || !analysis.habits.every(h => h && nonempty(h.title) && nonempty(h.action) && nonempty(h.cue) && nonempty(h.reason))) return false;
+  }
+
   if (!Array.isArray(analysis.scenes) || analysis.scenes.length !== 3) return false;
 
   const validRoles = ["life", "turning-point", "expansion"];
@@ -142,8 +165,8 @@ export function isFutureCoordinateAnalysis(value: unknown): value is FutureCoord
   });
   if (!scenesValid || !analysis.direction || typeof analysis.direction !== "object") return false;
   if (typeof analysis.direction.title !== "string" || typeof analysis.direction.summary !== "string" || !isStringArray(analysis.direction.steps, 3, 4)) return false;
-  if (!Array.isArray(analysis.roadmap) || analysis.roadmap.length !== 3 || !analysis.roadmap.every(isPlan)) return false;
-  if (analysis.roadmap[0].days !== 30 || analysis.roadmap[1].days !== 90 || analysis.roadmap[2].days !== 365) return false;
+  if (!Array.isArray(analysis.roadmap) || analysis.roadmap.length !== 3 || !analysis.roadmap.every(p => allowLegacy && (p as { days: number }).days === 90 ? isPlan({ ...p, days: 60 }) : isPlan(p))) return false;
+  if (analysis.roadmap[0].days !== 30 || (analysis.roadmap[1].days !== 60 && !(allowLegacy && Number(analysis.roadmap[1].days) === 90)) || analysis.roadmap[2].days !== 365) return false;
   if (!analysis.firstAction || typeof analysis.firstAction !== "object") return false;
   return (
     typeof analysis.firstAction.action === "string" &&

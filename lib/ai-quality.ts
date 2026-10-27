@@ -82,6 +82,9 @@ function normalize(value: string) {
 
 function reportText(report: FutureCoordinateAnalysis) {
   return normalize([
+    report.introduction?.title || "", report.introduction?.description || "",
+    ...(report.dailySchedule || []).flatMap(s => [s.activity, s.detail]),
+    ...(report.habits || []).flatMap(h => [h.title, h.action, h.cue, h.reason]),
     ...report.scenes.flatMap((scene) => [scene.title, ...scene.scene, scene.meaning, ...scene.values, scene.currentClue, scene.insight]),
     report.direction.title,
     report.direction.summary,
@@ -234,7 +237,7 @@ export function evaluateAiQuality(
   const firstActionScore = Math.round(15 * firstActionParts.filter(Boolean).length / firstActionParts.length);
   checks.push(check(
     "first-action",
-    "개인화된 72시간 첫 행동",
+    "개인화된 24시간 첫 행동",
     "personalization",
     "critical",
     firstActionScore,
@@ -242,7 +245,7 @@ export function evaluateAiQuality(
     `우선 질문 근거 ${citesPreferredAnswer ? "충족" : "미충족"}, 답변 어휘 연결 ${actionHasEvidence ? "충족" : "미충족"}, 소요 시간 ${minutes || "인식 불가"}분, 현재 환경 가정 ${firstActionContextSafe ? "없음" : firstActionContextTerms.join(", ")}`
   ));
 
-  const expectedStages = [[30, "NOTICE"], [90, "EXPERIMENT"], [365, "BUILD"]] as const;
+  const expectedStages = [[30, "NOTICE"], [60, "EXPERIMENT"], [365, "BUILD"]] as const;
   const stagesValid = report.roadmap.every((plan, index) => plan.days === expectedStages[index][0] && plan.stage === expectedStages[index][1]);
   const actionCount = report.roadmap.reduce((sum, plan) => sum + plan.actions.length, 0);
   const goalsAreDistinct = new Set(report.roadmap.map((plan) => normalize(plan.goal))).size === 3;
@@ -253,7 +256,7 @@ export function evaluateAiQuality(
   const roadmapScore = Math.round(10 * roadmapParts.filter(Boolean).length / roadmapParts.length);
   checks.push(check(
     "roadmap",
-    "30·90·365일 실행 가능성",
+    "30·60·365일 실행 가능성",
     "actionability",
     "warning",
     roadmapScore,

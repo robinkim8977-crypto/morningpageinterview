@@ -15,6 +15,9 @@ const state = {
 };
 
 const analysis = {
+  introduction: { title: "미래의 나", description: "나의 기준으로 살아갑니다." },
+  dailySchedule: ["07:00", "10:00", "14:00", "22:00"].map(time => ({ time, activity: "나의 리듬", detail: "집중과 회복을 연습합니다." })),
+  habits: Array.from({length: 5}, (_, i) => ({ title: `습관 ${i+1}`, action: "5분 집중하기", cue: "여유 시간에", reason: "기준을 발견합니다." })),
   scenes: [
     {
       id: "scene-1",
@@ -57,7 +60,7 @@ const analysis = {
   },
   roadmap: [
     { days: 30, stage: "NOTICE", goal: "기준 발견", description: "현재의 선택을 관찰합니다.", actions: ["매일 한 문장 기록하기"], result: "나의 기준 세 가지" },
-    { days: 90, stage: "EXPERIMENT", goal: "방식 실험", description: "발견한 기준을 생활에서 시험합니다.", actions: ["기준 하나를 3주간 적용하기"], result: "나에게 맞는 방식" },
+    { days: 60, stage: "EXPERIMENT", goal: "방식 실험", description: "발견한 기준을 생활에서 시험합니다.", actions: ["기준 하나를 3주간 적용하기"], result: "나에게 맞는 방식" },
     { days: 365, stage: "BUILD", goal: "삶에 축적", description: "효과가 있었던 방식을 반복합니다.", actions: ["계절마다 선택을 돌아보기"], result: "지속 가능한 생활 원칙" }
   ],
   firstAction: {

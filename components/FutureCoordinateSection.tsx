@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, ArrowLeft, Check, RefreshCw } from "lucide-react";
+import { ArrowLeft, Check, RefreshCw } from "lucide-react";
 import { ReportImageSave } from "@/components/ReportImageSave";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -23,19 +23,11 @@ import {
 } from "@/lib/future-coordinate";
 import { clearPaymentReceipt, isInterviewReadyForAnalysis, readPaymentReceipt } from "@/lib/payment";
 import { readInterviewSession } from "@/lib/storage";
-import type { FutureCoordinateAnalysis, FuturePlan, FutureScene, InterviewSession } from "@/lib/types";
-
-const sceneImages = [
-  "/images/future-coordinate-scene-light-shadow.png",
-  "/images/future-coordinate-scene-water-light.png",
-  "/images/future-coordinate-scene-ripples.png"
-];
-
-const sceneLabels = ["THE LIFE YOU BUILT", "THE TURNING POINT", "THE NEXT CHAPTER"];
+import type { FutureCoordinateAnalysis, FuturePlan, InterviewSession } from "@/lib/types";
 
 const roadmapMeta = {
   30: { stage: "NOTICE", korean: "발견하고 알아차리는 단계" },
-  90: { stage: "EXPERIMENT", korean: "새로운 방식을 시험하는 단계" },
+  60: { stage: "EXPERIMENT", korean: "새로운 방식을 시험하는 단계" },
   365: { stage: "BUILD", korean: "삶에 축적하는 단계" }
 } as const;
 
@@ -59,16 +51,17 @@ class ReportRequestError extends Error {
 
 function localDate(offset = 0) {
   const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() + offset);
+  date.setTime(date.getTime() + offset * 24 * 60 * 60 * 1000);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 function validActionDate(value: unknown) {
-  return typeof value === "string" && value >= localDate(0) && value <= localDate(3) ? value : localDate(1);
+  return typeof value === "string" && value >= localDate(0) && value <= localDate(1) ? value : localDate(1 / 24);
 }
 
 function sessionFingerprint(session: InterviewSession) {
@@ -100,7 +93,10 @@ function readCachedAnalysis(fingerprint: string) {
     const raw = window.localStorage.getItem(FUTURE_COORDINATE_ANALYSIS_KEY);
     if (!raw) return null;
     const cached = JSON.parse(raw) as { fingerprint?: string; analysis?: unknown };
-    return cached.fingerprint === fingerprint && isFutureCoordinateAnalysis(cached.analysis) ? cached.analysis : null;
+    const previous = JSON.parse(cached.fingerprint || "{}");
+    const current = JSON.parse(fingerprint);
+    const sameInterview = previous.name === current.name && previous.futureYear === current.futureYear && JSON.stringify(previous.answers) === JSON.stringify(current.answers);
+    return sameInterview && isFutureCoordinateAnalysis(cached.analysis, true) ? cached.analysis : null;
   } catch {
     return null;
   }
@@ -110,15 +106,15 @@ function suggestedCommitment(fingerprint: string, analysis: FutureCoordinateAnal
   return {
     fingerprint,
     action: analysis.firstAction.action,
-    date: localDate(1),
+    date: localDate(1 / 24),
     duration: analysis.firstAction.duration
   };
 }
 
-function readCommitment(fingerprint: string, analysis: FutureCoordinateAnalysis): Commitment {
+function readCommitment(fingerprint: string, analysis: FutureCoordinateAnalysis, storageKey = FUTURE_COORDINATE_COMMITMENT_KEY): Commitment {
   const fallback = suggestedCommitment(fingerprint, analysis);
   try {
-    const raw = window.localStorage.getItem(FUTURE_COORDINATE_COMMITMENT_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     if (!raw) return fallback;
     const saved = JSON.parse(raw) as Partial<Commitment>;
     if (saved.fingerprint !== fingerprint) return fallback;
@@ -142,7 +138,7 @@ function AnalysisLoading() {
         <div className="grid justify-items-center">
           <div className="hourglass mb-8" aria-hidden="true" />
           <h1 className="ko-keep text-3xl font-medium tracking-[-0.05em]">미래의 좌표를 찾고 있습니다.</h1>
-          <p className="mt-4 text-sm leading-6 text-black/55">세 장면 사이의 흐름과 지금 가능한 다음 한 걸음을 살펴보고 있어요.</p>
+          <p className="mt-4 text-sm leading-6 text-black/55">미래의 나와 하루, 습관과 실천할 미션을 정리하고 있어요.</p>
         </div>
       </section>
     </main>
@@ -208,64 +204,16 @@ function AutoGrowingAction({ value, onChange, placeholder }: { value: string; on
   );
 }
 
-function ScenePage({ scene, index }: { scene: FutureScene; index: number }) {
-  return (
-    <section className="future-coordinate-sheet future-coordinate-scene-sheet min-h-[880px] border-t border-black/15 px-[clamp(20px,6vw,86px)] py-16 md:py-24">
-      {index === 0 ? (
-        <header className="future-coordinate-chapter-intro mb-12 max-w-3xl">
-          <p className="text-xs font-bold tracking-[0.16em] text-black/45">01 · DISCOVER</p>
-          <h2 className="ko-keep mt-3 text-[clamp(30px,4vw,48px)] font-medium tracking-[-0.055em]">미래에서 세 장면을 발견합니다</h2>
-          <p className="ko-keep mt-4 max-w-2xl text-sm leading-7 text-black/58 md:text-base">인터뷰에서 가장 빛나는 세 장면을 골랐습니다.<br />당신이 그리고 있는 삶의 모습, 변화의 순간, 그리고 그 너머의 다음 꿈입니다.</p>
-        </header>
-      ) : null}
-      <div className="future-coordinate-scene-layout grid gap-10 md:grid-cols-[0.9fr_1.1fr] md:items-center">
-      <div className={index % 2 ? "future-coordinate-scene-image md:order-2" : "future-coordinate-scene-image"}>
-        <Image
-          src={sceneImages[index]}
-          alt=""
-          width={498}
-          height={814}
-          quality={95}
-          sizes="(min-width: 768px) 42vw, calc(100vw - 40px)"
-          className="h-[520px] w-full object-cover md:h-[700px]"
-        />
-      </div>
-      <article className={index % 2 ? "future-coordinate-scene-copy md:order-1" : "future-coordinate-scene-copy"}>
-        <p className="text-xs font-bold tracking-[0.14em] text-black/45">SCENE 0{index + 1} · {sceneLabels[index]}</p>
-        <h2 className="ko-keep mt-4 text-[clamp(34px,4.5vw,58px)] font-medium leading-[1.08] tracking-[-0.06em]">{scene.title}</h2>
-        <div className="ko-keep mt-8 space-y-3 text-[15px] leading-7 text-black/68 md:text-base">
-          {scene.scene.map((sentence, sentenceIndex) => <p key={`${scene.id}-scene-${sentenceIndex}`}>{sentence}</p>)}
-        </div>
-        <blockquote className="ko-keep mt-10 border-y border-black/25 py-7 text-[clamp(22px,2.2vw,30px)] font-medium leading-snug tracking-[-0.04em]">“{scene.insight}”</blockquote>
-        <div className="mt-10 grid gap-7 sm:grid-cols-2">
-          <div>
-            <p className="text-xs font-bold tracking-[0.12em] text-black/42">이 장면이 말하는 것</p>
-            <p className="ko-keep mt-3 text-sm leading-6 text-black/65">{scene.meaning}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold tracking-[0.12em] text-black/42">현재의 단서</p>
-            <p className="ko-keep mt-3 text-sm leading-6 text-black/65">{scene.currentClue}</p>
-          </div>
-        </div>
-        <div className="mt-8 flex flex-wrap gap-2">
-          {scene.values.map((value) => <span key={value} className="rounded-full border border-black/25 px-3 py-1.5 text-xs font-semibold">{value}</span>)}
-        </div>
-      </article>
-      </div>
-    </section>
-  );
-}
-
 function RoadmapPage({ plan }: { plan: FuturePlan }) {
-  const meta = roadmapMeta[plan.days];
+  const meta = roadmapMeta[plan.days] || roadmapMeta[60];
   return (
     <section className="future-coordinate-sheet grid min-h-[760px] place-items-center border-t border-black/15 px-[clamp(20px,8vw,120px)] py-20">
       <article className="w-full max-w-5xl">
         {plan.days === 30 ? (
           <header className="mb-14 max-w-4xl">
-            <p className="text-xs font-bold tracking-[0.16em] text-black/45">03 · COORDINATES</p>
-            <h2 className="ko-keep mt-3 text-[clamp(30px,4vw,48px)] font-medium tracking-[-0.055em]">미래로 향하는 세 개의 좌표를 세웁니다</h2>
-            <p className="ko-keep mt-4 max-w-3xl text-sm leading-7 text-black/58 md:text-base">30일, 90일, 365일의 좌표를 세웁니다. 미래를 한 번에 완성하려 하지 않고, 지금의 삶에서 시도할 수 있는 변화부터 차례로 연결합니다.</p>
+            <p className="text-xs font-bold tracking-[0.16em] text-black/45">04 · FUTURE INDICATORS</p>
+            <h2 className="ko-keep mt-3 text-[clamp(30px,4vw,48px)] font-medium tracking-[-0.055em]">30 / 60 / 365일 미션과 미래지표</h2>
+            <p className="ko-keep mt-4 max-w-3xl text-sm leading-7 text-black/58 md:text-base">30일, 60일, 365일의 좌표를 세웁니다. 미래를 한 번에 완성하려 하지 않고, 지금의 삶에서 시도할 수 있는 변화부터 차례로 연결합니다.</p>
             <p className="ko-keep mt-3 max-w-3xl text-sm leading-6 text-black/45">이 좌표는 미래를 모두 달성하기 위한 마감표가 아니라, 지금의 삶에서 시작해 조금씩 가까워지기 위한 기준입니다.</p>
             <p className="mt-5 text-xs font-bold tracking-[0.13em] text-black/36">NOTICE → EXPERIMENT → BUILD</p>
           </header>
@@ -288,7 +236,7 @@ function RoadmapPage({ plan }: { plan: FuturePlan }) {
           ))}
         </div>
         <div className="mt-12 rounded-[26px] bg-black px-7 py-6 text-white md:px-9">
-          <p className="text-xs font-bold tracking-[0.13em] text-white/55">RESULT</p>
+          <p className="text-xs font-bold tracking-[0.13em] text-white/55">FUTURE INDICATOR · 미래지표</p>
           <p className="ko-keep mt-2 text-xl font-medium leading-8 md:text-2xl">{plan.result}</p>
         </div>
       </article>
@@ -326,7 +274,7 @@ export function FutureCoordinateSection() {
     if (!session || !paymentChecked) return;
     if (!hasAnswers) { setLoading(false); return; }
 
-    const cached = readCachedAnalysis(fingerprint);
+    const cached = isPreview ? null : readCachedAnalysis(fingerprint);
     if (cached) {
       setAnalysis(cached);
       setCommitment(readCommitment(fingerprint, cached));
@@ -366,10 +314,12 @@ export function FutureCoordinateSection() {
             && (data.error === "PAYMENT_LEDGER_UNAVAILABLE" || data.error === "PAYMENT_REVIEW_REQUIRED");
           throw new ReportRequestError(message, canRetry);
         }
-        window.localStorage.setItem(FUTURE_COORDINATE_ANALYSIS_KEY, JSON.stringify({ fingerprint, analysis: data }));
-        const nextCommitment = suggestedCommitment(fingerprint, data);
-        window.localStorage.removeItem(FUTURE_COORDINATE_COMMITMENT_KEY);
-        clearPaymentReceipt();
+        if (!isPreview) {
+          window.localStorage.setItem(FUTURE_COORDINATE_ANALYSIS_KEY, JSON.stringify({ fingerprint, analysis: data }));
+          window.localStorage.removeItem(FUTURE_COORDINATE_COMMITMENT_KEY);
+          clearPaymentReceipt();
+        }
+        const nextCommitment = isPreview ? readCommitment(fingerprint, data, `${FUTURE_COORDINATE_COMMITMENT_KEY}-preview`) : suggestedCommitment(fingerprint, data);
         setCommitment(nextCommitment);
         setAnalysis(data);
         setPaymentId("");
@@ -399,7 +349,7 @@ export function FutureCoordinateSection() {
       duration: commitment.duration.trim(),
       promisedAt: new Date().toISOString()
     };
-    window.localStorage.setItem(FUTURE_COORDINATE_COMMITMENT_KEY, JSON.stringify(next));
+    window.localStorage.setItem(isPreview ? `${FUTURE_COORDINATE_COMMITMENT_KEY}-preview` : FUTURE_COORDINATE_COMMITMENT_KEY, JSON.stringify(next));
     setCommitment(next);
     setSaved(true);
     trackFirstActionCommitted();
@@ -416,56 +366,43 @@ export function FutureCoordinateSection() {
     <main className="page-shell min-h-screen bg-[#F8F7F4] future-coordinate-page">
       <Header />
 
-      <section className="future-coordinate-sheet grid min-h-[760px] gap-10 px-[clamp(20px,6vw,86px)] pb-20 pt-5 md:grid-cols-[0.78fr_1.42fr] md:items-center md:pb-28">
-        <Image src="/images/future-coordinate-hero.png" alt="부드러운 빛이 비치는 천의 질감" width={1122} height={1402} priority quality={95} sizes="(min-width: 768px) 34vw, calc(100vw - 40px)" className="h-[380px] w-full object-cover md:h-[610px]" />
-        <div className="md:pl-2">
-          <p className="mb-5 text-xs font-bold tracking-[0.13em] text-black/45">FUTURE COORDINATE</p>
-          <h1 className="ko-keep text-[clamp(42px,5.5vw,76px)] font-medium leading-[1.03] tracking-[-0.07em]">미래와 현재 사이의<br />다음 한 걸음</h1>
-          <p className="ko-keep mt-8 max-w-2xl text-[15px] font-medium leading-7 text-black/65 md:text-base">
-            세 장면이 가리키는 하나의 방향을 발견하고,<br />그 미래를 서두르지 않으면서 오늘 할 수 있는 일을 찾았습니다.
-          </p>
-          <div className="mt-10 border-y border-black/20 py-5">
-            <p className="text-xs font-bold tracking-[0.12em] text-black/62 sm:text-sm">DISCOVER → DIRECTION → COORDINATES → DEPARTURE</p>
-            <p className="ko-keep mt-2 text-xs leading-5 text-black/45">세 장면 발견 → 하나의 방향 → 미래로 향하는 좌표 → 72시간 첫 행동</p>
-          </div>
-          <div className="mt-10 flex flex-wrap items-center gap-3">
-            <Button asChild size="sm"><Link href="/report"><ArrowLeft size={14} /> 인터뷰 결과로 돌아가기</Link></Button>
-            <span className="rounded-full border border-black/20 px-3 py-1.5 text-xs font-semibold text-black/48">{analysis.mode === "ai" ? "AI 분석 완료" : "예시 데이터 · API 미연결"}</span>
-          </div>
+
+      <section className="coordinate-cover">
+        <Image src="/images/redesign/future-landscape.png" fill priority alt="잔잔한 물과 모래빛 지형 사이에 서 있는 미래의 포털" sizes="100vw" className="object-cover" />
+        <div className="coordinate-cover-copy glass-panel">
+          <p className="coordinate-eyebrow">YOUR FUTURE, IN FOCUS</p>
+          <h1>{session.name}님의<br/>미래좌표</h1>
+          <p>인터뷰에 담긴 가능성을, 오늘의 선택으로.</p>
+          <span>{analysis.mode === "ai" ? "AI 분석 리포트" : "미리보기 · 예시 리포트"} / {session.futureYear}년 후의 나</span>
         </div>
+        <a href="#future-introduction" className="coordinate-cover-link">나의 다음 장으로 ↓</a>
       </section>
-
-      {analysis.scenes.map((scene, index) => <ScenePage key={scene.id} scene={scene} index={index} />)}
-
-      <section className="future-coordinate-sheet grid min-h-[800px] place-items-center border-t border-black/15 px-[clamp(20px,8vw,120px)] py-20">
-        <div className="w-full max-w-5xl text-center">
-          <p className="text-xs font-bold tracking-[0.16em] text-black/42">02 · DIRECTION</p>
-          <h2 className="ko-keep mt-4 text-[clamp(32px,4.5vw,54px)] font-medium leading-[1.08] tracking-[-0.06em]">세 장면을 관통하는 하나의 방향을 발견했습니다</h2>
-          <p className="ko-keep mx-auto mt-5 max-w-2xl text-sm leading-7 text-black/52 md:text-base">서로 달라 보이는 미래의 장면들이 실제로 어떤 하나의 삶의 방향을 가리키고 있는지 살펴봅니다.</p>
-          <p className="mt-12 text-xs font-bold tracking-[0.16em] text-black/38">YOUR DIRECTION</p>
-          <p className="ko-keep mx-auto mt-6 max-w-4xl text-[clamp(28px,4vw,52px)] font-medium leading-[1.12] tracking-[-0.055em]">{analysis.direction.title}</p>
-          <p className="ko-keep mx-auto mt-6 max-w-2xl text-base leading-7 text-black/58">{analysis.direction.summary}</p>
-          <div className="mx-auto mt-14 grid max-w-xl justify-items-center gap-4">
-            {analysis.direction.steps.map((step, index) => (
-              <div key={step} className="contents">
-                <div className="w-full rounded-full border border-black/30 px-6 py-4 text-lg font-semibold">{step}</div>
-                {index < analysis.direction.steps.length - 1 ? <ArrowDown size={20} className="text-black/35" /> : null}
-              </div>
-            ))}
-          </div>
-        </div>
+      <nav className="coordinate-index" aria-label="리포트 목차">
+        {[["future-introduction", "01 미래의 나"], ["future-day", "02 하루 스케줄"], ["future-habits", "03 핵심 습관"], ["future-missions", "04 미래지표"], ["future-promise", "05 행동 약속"]].map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
+      </nav>
+      <section id="future-introduction" className="coordinate-section coordinate-introduction future-coordinate-sheet">
+        <div><p className="coordinate-eyebrow">01 / MEET YOUR FUTURE SELF</p><h2>미래의 나 소개</h2><p className="coordinate-note">당신이 그린 미래를 바탕으로 재구성한 가능성입니다.</p></div>
+        <article><h3>{analysis.introduction?.title || analysis.direction.title}</h3><p>{analysis.introduction?.description || analysis.direction.summary}</p><div className="coordinate-values">{Array.from(new Set(analysis.scenes.flatMap(s => s.values))).slice(0,5).map(v => <span key={v}>{v}</span>)}</div><blockquote>“{analysis.scenes[0].insight}”</blockquote><details className="coordinate-source-scenes"><summary>인터뷰 속 세 장면과 해석 더 보기</summary>{analysis.scenes.map(scene => <div key={scene.id}><h4>{scene.title}</h4>{scene.scene.map((line,i) => <p key={i}>{line}</p>)}<p>{scene.meaning}</p><p>{scene.currentClue}</p></div>)}</details></article>
       </section>
-
+      <section id="future-day" className="coordinate-section future-coordinate-sheet">
+        <p className="coordinate-eyebrow">02 / A DAY IN YOUR FUTURE</p><h2>미래의 나의 하루</h2><p className="coordinate-note">인터뷰 속 생활 리듬을 바탕으로 제안한 스케줄입니다. 시간은 자유롭게 바꿔도 좋아요.</p>
+        <div className="coordinate-schedule">{analysis.dailySchedule?.map((slot, index) => <article key={`${slot.time}-${index}`}><time>{slot.time}</time><div><h3>{slot.activity}</h3><p>{slot.detail}</p></div><span aria-hidden="true">↗</span></article>) || <p>이전 버전의 리포트입니다. 하루의 장면은 ‘미래의 나 소개’의 해석 더 보기에서 확인할 수 있어요.</p>}</div>
+      </section>
+      <section id="future-habits" className="coordinate-section coordinate-habit-section future-coordinate-sheet">
+        <p className="coordinate-eyebrow">03 / SMALL RITUALS, REAL CHANGE</p><h2>나를 만드는 핵심 습관 5개</h2><p className="coordinate-note">모두 한 번에 시작할 필요는 없어요. 가장 마음이 가는 하나부터.</p>
+        <div className="coordinate-habits">{analysis.habits?.map((habit,index) => <article key={index}><span className="habit-number">0{index+1}</span><div><h3>{habit.title}</h3><p className="habit-cue">{habit.cue}</p><p>{habit.action}</p><p className="habit-reason">{habit.reason}</p></div></article>) || <p>이전 버전에는 습관 제안이 포함되지 않았습니다. 저장된 분석은 그대로 보관됩니다.</p>}</div>
+      </section>
+      <div id="future-missions" />
       {analysis.roadmap.map((plan) => <RoadmapPage key={plan.days} plan={plan} />)}
 
-      <section className="future-coordinate-sheet grid min-h-[800px] gap-10 border-t border-black/15 px-[clamp(20px,6vw,86px)] py-16 md:grid-cols-[0.82fr_1.18fr] md:items-center md:py-28">
-        <Image src="/images/future-coordinate-commitment.png" alt="빛과 그림자 사이의 작은 그릇" width={1122} height={1402} quality={95} sizes="(min-width: 768px) 40vw, calc(100vw - 40px)" className="h-[430px] w-full object-cover md:h-[610px]" />
+      <section id="future-promise" className="future-coordinate-sheet coordinate-promise grid min-h-[800px] gap-10 border-t border-black/15 px-[clamp(20px,6vw,86px)] py-16 md:grid-cols-[0.82fr_1.18fr] md:items-center md:py-28">
+        <Image src="/images/redesign/future-landscape.png" alt="미래를 향한 첫걸음을 상징하는 고요한 풍경" width={1122} height={1402} quality={95} sizes="(min-width: 768px) 40vw, calc(100vw - 40px)" className="h-[430px] w-full object-cover md:h-[610px]" />
         <div>
-          <p className="text-xs font-bold tracking-[0.16em] text-black/45">04 · DEPARTURE</p>
-          <h2 className="ko-keep mt-3 text-[clamp(30px,4vw,48px)] font-medium tracking-[-0.055em]">이제 첫걸음을 내딛습니다</h2>
-          <p className="ko-keep mt-4 max-w-xl text-sm leading-7 text-black/52">72시간 안에 실행할 첫 행동을 약속합니다. 미래를 완성하는 일이 아니라, 미래와 현재를 처음 연결하는 작은 행동입니다.</p>
-          <p className="mt-10 text-xs font-bold tracking-[0.13em] text-black/45">72 HOURS · FIRST ACTION</p>
-          <h3 className="mt-3 text-[clamp(34px,4.4vw,58px)] font-medium tracking-[-0.065em]">72시간 안의 첫 행동</h3>
+          <p className="text-xs font-bold tracking-[0.16em] text-black/45">05 · MAKE A PROMISE</p>
+          <h2 className="ko-keep mt-3 text-[clamp(30px,4vw,48px)] font-medium tracking-[-0.055em]">24시간 안에, 작은 미션 하나</h2>
+          <p className="ko-keep mt-4 max-w-xl text-sm leading-7 text-black/52">24시간 안에 실행할 첫 행동을 약속합니다. 미래를 완성하는 일이 아니라, 미래와 현재를 처음 연결하는 작은 행동입니다.</p>
+          <p className="mt-10 text-xs font-bold tracking-[0.13em] text-black/45">24 HOURS · FIRST ACTION</p>
+          <h3 className="mt-3 text-[clamp(34px,4.4vw,58px)] font-medium tracking-[-0.065em]">24시간 안의 첫 행동</h3>
           <p className="ko-keep mt-5 max-w-xl text-sm font-medium leading-7 text-black/60 md:text-base">
             미래는 거대한 결심보다 작고 분명한 행동에서 시작됩니다.<br />{analysis.firstAction.reason}
           </p>
@@ -477,15 +414,15 @@ export function FutureCoordinateSection() {
             </label>
             <div className="grid gap-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
               <label className="grid gap-2 text-sm font-semibold">
-                실행 날짜
-                <Input type="date" min={localDate(0)} max={localDate(3)} value={validActionDate(commitment.date)} onChange={(event) => setCommitment((value) => ({ ...value, date: validActionDate(event.target.value), promisedAt: undefined }))} className="h-12 rounded-xl border-black/45 bg-transparent px-4" />
+                실행 일시
+                <Input type="datetime-local" min={localDate(0)} max={localDate(1)} value={validActionDate(commitment.date)} onChange={(event) => setCommitment((value) => ({ ...value, date: validActionDate(event.target.value), promisedAt: undefined }))} className="h-12 rounded-xl border-black/45 bg-transparent px-4" />
               </label>
               <label className="grid gap-2 text-sm font-semibold">
                 예상 소요시간
                 <Input value={commitment.duration} onChange={(event) => setCommitment((value) => ({ ...value, duration: event.target.value, promisedAt: undefined }))} placeholder={analysis.firstAction.duration} className="h-12 rounded-xl border-black/45 bg-transparent px-4" />
               </label>
               <Button type="button" size="sm" className="h-12 min-w-36" disabled={!commitment.action.trim() || !commitment.duration.trim()} onClick={savePromise}>
-                {saved ? <><Check size={14} /> 약속했어요</> : "첫 행동 약속하기"}
+                {saved ? <><Check size={14} /> 약속했어요</> : "이 행동 약속하기"}
               </Button>
             </div>
             {commitment.promisedAt && !saved ? <p className="text-xs font-medium text-black/45">이 기기에 첫 행동이 저장되었습니다.</p> : null}
@@ -496,10 +433,12 @@ export function FutureCoordinateSection() {
       <section className="flex flex-wrap items-center justify-center gap-4 border-t border-black/15 px-5 py-16 future-coordinate-actions">
         <Button asChild size="sm" className="min-w-48"><Link href="/report"><ArrowLeft size={14} /> 인터뷰 결과로 돌아가기</Link></Button>
         <ReportImageSave title={`${session.name}님의 미래좌표`} sections={[
-          ...analysis.scenes.map((scene) => ({ title: scene.title, body: [...scene.scene, scene.meaning, `가치: ${scene.values.join(" · ")}`, scene.currentClue, scene.insight].join("\n\n") })),
-          { title: analysis.direction.title, body: [analysis.direction.summary, ...analysis.direction.steps].join("\n\n") },
+          { title: "01 미래의 나 소개", body: [analysis.introduction?.title || analysis.direction.title, analysis.introduction?.description || analysis.direction.summary, ...analysis.scenes.flatMap(s => [s.title, ...s.scene, s.meaning, s.currentClue, s.insight])].join("\n\n") },
+          { title: "02 미래의 하루 스케줄", body: (analysis.dailySchedule || []).map(s => `${s.time} · ${s.activity}\n${s.detail}`).join("\n\n") },
+          { title: "03 핵심 습관 5개", body: (analysis.habits || []).map((h,i) => `${i+1}. ${h.title}\n${h.cue} · ${h.action}\n${h.reason}`).join("\n\n") },
+
           ...analysis.roadmap.map((plan) => ({ title: `${plan.days}일 · ${plan.goal}`, body: [plan.evidence ? `당신의 답변에서 · Q.${plan.evidence.questionId}\n“${plan.evidence.quote}”` : "", plan.description, ...plan.actions, plan.result].join("\n\n") })),
-          { title: "72시간 안의 첫 행동", body: [commitment.action || analysis.firstAction.action, analysis.firstAction.reason, `실행 날짜: ${commitment.date}`, `예상 소요시간: ${commitment.duration || analysis.firstAction.duration}`].join("\n\n") }
+          { title: "24시간 안의 첫 행동", body: [commitment.action || analysis.firstAction.action, analysis.firstAction.reason, `실행 일시: ${commitment.date}`, `예상 소요시간: ${commitment.duration || analysis.firstAction.duration}`].join("\n\n") }
         ]} />
         <Button type="button" size="sm" className="min-w-48" onClick={() => {
           trackPdfDownload("future_coordinate");

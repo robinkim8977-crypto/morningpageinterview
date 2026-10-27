@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { FutureSelfCard } from "./FutureSelfCard";
+
 import { trackLandingAction } from "@/lib/analytics";
 import { FUTURE_COORDINATE_PRICE } from "@/lib/payment";
 import s from "./FutureSelf.module.css";
@@ -8,7 +8,7 @@ const price = `${FUTURE_COORDINATE_PRICE.toLocaleString("ko-KR")}원`;
 const faqs = [
     ["지금의 나와 달라도 괜찮나요?", "괜찮아요. 이 인터뷰는 원하는 미래의 내가 되어 답하는 상상입니다. 지금의 성격, 직업, 환경과 달라도 좋아요. 성격과 관심부터 고르고, 뒤로 갈수록 미래의 하루와 변화를 한두 문장씩 적습니다."],
     ["얼마나 길게 써야 하나요?", "5개 챕터, 11개 질문입니다. 초반에는 선택으로 시작하고, 후반에는 단어나 한 문장부터 써도 괜찮아요. 정해진 분량은 없으며, 작성 시간은 생각하는 시간과 답변 길이에 따라 달라집니다."],
-    ["무료와 유료는 어떻게 다른가요?", `미래의 나 만들기와 선택·답변을 정리한 미래 기억 매거진은 무료입니다. AI 해석은 포함하지 않습니다. ${price} 선택 구매인 미래좌표는 답변 속 세 장면과 하나의 방향, 30·90·365일 로드맵과 72시간 첫 행동을 제안합니다.`],
+    ["무료와 유료는 어떻게 다른가요?", `미래의 나 만들기와 선택·답변을 정리한 미래 기억 매거진은 무료입니다. AI 해석은 포함하지 않습니다. ${price} 선택 구매인 미래좌표는 미래의 나 소개, 하루 스케줄, 핵심 습관 5개, 30·60·365일 미션과 24시간 행동 약속을 제안합니다.`],
     ["작성한 내용은 어디에 저장되나요?", "회원가입 없이 이용하며, 답변과 결과는 현재 기기·브라우저에 저장됩니다. 같은 브라우저에서 이어 쓸 수 있지만 다른 기기의 자동 복원이나 이메일 재발송은 제공하지 않습니다. 결과는 PDF 또는 이미지로 보관해주세요."],
     ["AI 분석은 어떻게 진행되나요?", "결제 확인과 인터뷰 완료 후 답변이 서버와 AI 서비스로 전송되어 해석을 만듭니다. 생성에는 수 분 이상 걸릴 수 있습니다. 미래의 성격·성과를 예측하거나 실제 미래의 실현을 보장하지 않는 자기성찰용 참고 콘텐츠입니다."],
     ["결제한 뒤 문제가 생기면 어떻게 하나요?", "2,900원 1회 결제이며 정기결제가 아닙니다. 인터뷰 전·후 구매할 수 있습니다. 생성·열람 문제가 발생하면 하단 결제·취소·환불 정책의 문의 경로로 알려주세요."]
@@ -28,9 +28,10 @@ export function LandingSection() {
     </header>
     <main id="main" className={s.shell}>
     <section className={s.hero}>
+    <div className={s.heroLandscape} aria-hidden="true" />
     <div>
     <p className={s.eyebrow}>CREATE YOUR FUTURE SELF</p>
-    <h1 className={s.title}>몇 년 후의 나를<br />만들어볼까요?</h1>
+    <h1 className={s.title}>아직 만나지 못한 나,<br />그곳으로 가볼까요?</h1>
     <p className={s.copy}>우리는 언제라도 새로운 내가 될 수 있어요.<br />어떤 사람이 되고 싶은지 그려보면, 그 모습에 가까운 행동을 선택하는 기준이 생깁니다. 작은 선택을 쌓으며 원하는 삶의 방향을 찾아보세요.</p>
     <p className={s.description}>성격, 좋아하는 일, 머물고 싶은 곳부터 골라보세요.<br />그리고 그 사람이 살아가는 하루를 함께 상상해볼 거예요.</p>
     <p className={s.fine}>게임처럼 가볍게 고르고 · 한 장면을 쓰고 · 내 방향을 발견하기</p>
@@ -40,7 +41,12 @@ export function LandingSection() {
     </div>
     <p className={s.fine}>인터뷰·미래 기억 무료 · AI 해석 선택 구매<br />5개 챕터 · 11개 질문 · 회원가입 없이 내 속도대로</p>
     </div>
-    <FutureSelfCard sample/>
+    <aside className={s.portalCard} aria-label="미래로 향하는 초대">
+      <span className={s.portalOrbit}>↗</span><p className={s.eyebrow}>DESTINATION / YOUR FUTURE</p>
+      <p className={s.portalTitle}>Somewhere,<br /><em>you become.</em></p>
+      <div className={s.portalRule}/><p>아직 만나지 못한 나에게.<br/>가능성은 여기서 시작됩니다.</p>
+      <span className={s.portalFoot}>37° POSSIBILITY · ∞ NEXT CHAPTER</span>
+    </aside>
     </section>
     <section className={s.section} id="how">
     <p className={s.eyebrow}>HOW YOUR NEXT CHAPTER UNFOLDS</p>
@@ -54,9 +60,9 @@ export function LandingSection() {
     <section className={s.premium} id="coordinate">
     <p className={s.eyebrow}>FUTURE COORDINATION</p>
     <h2 className={s.title}>미래 좌표 설정하기</h2>
-    <p className={s.description}>정체성은 내가 나에 대해 만들어가는 이야기입니다.<br />11개의 질문으로 그린 미래의 나를 AI가 분석해, 세 장면을 잇는 하나의 방향으로 정리합니다.</p>
+    <p className={s.description}>정체성은 내가 나에 대해 만들어가는 이야기입니다.<br />11개의 질문으로 그린 미래의 나를 AI가 분석해, 미래의 나와 하루, 오늘 시작할 행동으로 정리합니다.</p>
     <p className={s.description}>미래의 장면에서 내가 원하는 삶의 기준을 찾고, 그 방향으로 가고 있는지 스스로 살펴볼 수 있는 좌표를 제안합니다. 앞으로 시험해볼 행동을 통해 원하는 미래에 가까워지는 선택을 돕습니다.</p>
-    <div className={s.grid}>{[["세 장면 · 하나의 방향", "답변에 담긴 공간·관계·변화를 바탕으로, 반복되는 가치와 선택의 기준을 해석합니다."], ["30·90·365일 좌표", "중요한 기준을 알아차리고, 생활에서 시험하고, 잘 맞는 방식을 쌓는 로드맵을 제안합니다."], ["72시간 첫 행동", "미래의 습관에서 지금 가능한 작은 행동 하나를 찾아, 오늘의 선택으로 연결합니다."]].map(([t, d]) => <div key={t}>
+    <div className={s.grid}>{[["01 / 미래의 나 소개", "답변 속 가치와 선택을 연결해 원하는 미래의 나를 소개합니다."], ["02 / 미래의 하루 스케줄", "몰입과 회복, 소중한 관계가 있는 하루를 시간표로 그립니다."], ["03 / 핵심 습관 5개", "미래의 삶을 지탱할 습관과 지금 가능한 실천을 제안합니다."], ["04 / 30·60·365일 미션", "방향에 가까워지고 있는지 확인할 행동과 미래지표를 세웁니다."], ["05 / 24시간 안의 약속", "작은 미션 하나를 골라 언제 행동할지 약속하고 저장합니다."]].map(([t, d]) => <div key={t}>
         <h3>{t}</h3>
         <p className={s.fine}>{d}</p>
         </div>)}</div>

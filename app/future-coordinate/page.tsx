@@ -3,7 +3,7 @@ import { FutureCoordinateProductSection } from "@/components/FutureCoordinatePro
 
 export const metadata: Metadata = {
   title: "미래좌표 리포트",
-  description: "인터뷰 속 세 가지 미래 장면, 하나의 방향과 30·90·365일 로드맵을 제안하는 개인화 AI 리포트입니다."
+  description: "미래의 나 소개, 하루 스케줄, 핵심 습관 5개, 30·60·365일 미션과 24시간 행동 약속을 제안하는 개인화 AI 리포트입니다."
 };
 
 export default function FutureCoordinatePage() {

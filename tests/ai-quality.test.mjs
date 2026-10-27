@@ -57,7 +57,7 @@ test("답변에 없는 퇴사와 직원 채용을 만들면 치명 오류로 실
   assert.match(result.checks.find((item) => item.id === "unsupported-assumptions").detail, /퇴사/);
 });
 
-test("72시간 행동이 두 시간이거나 우선 질문 근거가 없으면 실패한다", () => {
+test("24시간 행동이 두 시간이거나 우선 질문 근거가 없으면 실패한다", () => {
   const report = validReport();
   report.firstAction.duration = "2시간";
   report.firstAction.sourceQuestionIds = [1];

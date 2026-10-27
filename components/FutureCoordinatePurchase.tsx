@@ -192,7 +192,7 @@ export function FutureCoordinatePurchase() {
           amount: FUTURE_COORDINATE_PRICE,
           quantity: 1,
           link: `${window.location.origin}/future-coordinate`,
-          description: "세 가지 미래 장면과 30·90·365일 로드맵"
+          description: "미래의 나·하루 스케줄·습관 5개와 30·60·365일 미션"
         }],
         customData: { productCode: FUTURE_COORDINATE_PRODUCT_CODE },
         redirectUrl: `${window.location.origin}/future-coordinate/payment-complete`

@@ -17,7 +17,7 @@ const sections: LegalSection[] = [
       <LegalList>
         <li>회원가입 없이 이용하는 미래 인터뷰와 인터뷰 결과 정리</li>
         <li>인터뷰 답변을 AI가 분석하여 제공하는 유료 미래좌표 리포트</li>
-        <li>72시간 첫 행동의 브라우저 저장 및 결과 PDF 저장 지원</li>
+        <li>24시간 첫 행동의 브라우저 저장 및 결과 PDF 저장 지원</li>
       </LegalList>
     )
   },
