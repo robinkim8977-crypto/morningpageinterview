@@ -479,9 +479,68 @@ export function ReportSection() {
     return <EmptyReportState />;
   }
 
-  if (session?.questionnaireVersion === 3) return <main className={s.page}><header className={s.header}><Link href="/" className={s.brand}>THE MORNING PAGE<small>INTERVIEW / 미래 기억</small></Link><Link href="/start">다른 미래 그리기</Link></header><section className={s.shell}><p className={s.eyebrow}>YOUR FIRST FUTURE / 무료 기록</p><h1 className={s.title}>{magazine.name}님의<br/>미래 기억이 도착했어요.</h1><p className={s.description}>{session.futureYear}년 후의 나를 그린 첫 번째 버전입니다.<br/>내가 고른 모습과 직접 쓴 장면을 한 편의 기록으로 모았어요.</p><div className={s.reveal}><FutureSelfCard session={session}/></div><p className={s.fine}>선택과 답변을 그대로 정리한 기록입니다. AI 해석은 포함하지 않습니다.</p>{magazine.sections.map(section=><article className={s.story} key={section.number}><p className={s.eyebrow}>{section.number} / {section.title}</p><h2>{section.question}</h2>{renderParagraphs(section.body)}</article>)}{hasMeaningfulAnswer(magazine.messageToPresent)&&<article className={s.story}><p className={s.eyebrow}>11 / 현재로 보내기</p><h2>지금의 나에게 보내는 메시지</h2>{renderParagraphs(magazine.messageToPresent)}</article>}<section className={s.premium}><p className={s.eyebrow}>FUTURE COORDINATION</p><h2 className={s.title}>이 미래가 내게 의미하는 것은?</h2><p className={s.description}>정체성은 내가 나에 대해 만들어가는 이야기입니다. 11개 질문의 선택과 답변을 AI가 해석해 미래의 나 소개, 하루 스케줄, 핵심 습관 5개로 정리합니다.</p><p className={s.description}>원하는 삶의 기준을 살펴볼 30·60·365일 좌표와, 지금 시험할 작은 행동을 제안합니다.</p><Link className={s.button} href={hasFutureCoordinatePayment?"/future-coordinate/result":"/future-coordinate#purchase"}>{hasFutureCoordinatePayment?"구매한 미래좌표 보기":`미래 분석 & 좌표 설정 ${FUTURE_COORDINATE_PRICE.toLocaleString("ko-KR")}원`} ↗</Link><p className={s.fine}>선택 구매 · 1회 결제 · 결제 확인과 인터뷰 완료 후 AI 분석<br/>결과는 자기성찰용 참고 콘텐츠이며 미래의 실현을 보장하지 않습니다.</p></section><div className={s.resultActions}><ReportImageSave title={`${magazine.name}님의 미래 기억`} sections={[{title:`${magazine.futureYear}년의 미래 기억`,body:`${magazine.name}님의 인터뷰`},...magazine.sections.map(section=>({title:section.title,body:section.body})),...(hasMeaningfulAnswer(magazine.messageToPresent)?[{title:"현재의 나에게 보내는 메시지",body:magazine.messageToPresent}]:[])]}/><button className={s.button} onClick={()=>{trackPdfDownload("free");downloadMemoryPdf(magazine)}}>PDF 저장</button>{!hasFutureCoordinatePayment&&<Link className={`${s.button} ${s.secondary}`} href="/interview">답변 다듬기</Link>}</div></section></main>;
+  if (session?.questionnaireVersion === 3) return (
+    <main className={`${s.page} ${s.memoryPage}`}>
+      <header className={s.header}>
+        <Link href="/" className={s.brand}>THE MORNING PAGE<small>INTERVIEW / 미래 기억</small></Link>
+        <Link className={s.textButton} href="/start">다른 미래 그리기 ↗</Link>
+      </header>
+      <section className={`${s.shell} ${s.memoryShell}`}>
+        <div className={s.memoryCover}>
+          <div className={s.memoryCoverCopy}>
+            <p className={s.eyebrow}>FUTURE MEMORY / VOL. 01</p>
+            <h1 className={s.title}>{magazine.name}님의<br />미래 기억이 도착했어요.</h1>
+            <p className={s.description}>{session.futureYear}년 후의 나를 그린 첫 번째 버전.<br />내가 고른 모습과 직접 쓴 장면을<br />한 편의 기록으로 모았어요.</p>
+            <a className={s.memoryReadLink} href="#memory-stories">나의 미래 읽기 ↓</a>
+            <p className={s.coverNote}>선택과 답변을 정리한 무료 기록 · AI 해석 미포함</p>
+          </div>
+          <FutureSelfCard session={session} />
+          <span className={s.memoryCoverCaption}>A FUTURE YOU CAN RETURN TO</span>
+        </div>
+        <nav className={s.memoryIndex} aria-label="미래 기억 목차">
+          <span>YOUR MEMORY / INDEX</span>
+          {magazine.sections.map(section => <a key={section.number} href={`#memory-${section.number}`}>{section.number} / {section.title}</a>)}
+          {hasMeaningfulAnswer(magazine.messageToPresent) ? <a href="#memory-message">11 / 현재로 보내기</a> : null}
+        </nav>
+        <div id="memory-stories" className={s.memoryBody}>
+          {magazine.sections.map(section => (
+            <article id={`memory-${section.number}`} className={s.memoryStory} key={section.number}>
+              <div className={s.memoryStoryLabel}><span>{section.number}</span><p>{section.title}</p></div>
+              <div><h2>{section.question}</h2>{renderParagraphs(section.body)}</div>
+            </article>
+          ))}
+          {hasMeaningfulAnswer(magazine.messageToPresent) ? (
+            <article id="memory-message" className={s.memoryMessage}>
+              <p className={s.eyebrow}>11 / A NOTE TO THE PRESENT</p>
+              <h2>지금의 나에게 보내는 메시지</h2>
+              {renderParagraphs(magazine.messageToPresent)}
+              <span>FROM YOUR FUTURE SELF, WITH POSSIBILITY.</span>
+            </article>
+          ) : null}
+        </div>
+        <section className={s.premium}>
+          <p className={s.eyebrow}>THE NEXT STEP / FUTURE COORDINATION</p>
+          <h2 className={s.title}>상상한 미래를,<br />오늘의 작은 선택으로.</h2>
+          <p className={s.description}>11개 질문의 선택과 답변을 AI가 해석해 미래의 나 소개, 하루 스케줄, 핵심 습관 5개로 정리합니다.</p>
+          <p className={s.description}>30·60·365일 미션과 미래지표, 24시간 내 시작할 행동을 제안합니다.</p>
+          <Link className={s.button} href={hasFutureCoordinatePayment ? "/future-coordinate/result" : "/future-coordinate#purchase"}>{hasFutureCoordinatePayment ? "구매한 미래좌표 보기" : `미래 분석 & 좌표 설정 ${FUTURE_COORDINATE_PRICE.toLocaleString("ko-KR")}원`} ↗</Link>
+          <p className={s.fine}>선택 구매 · 1회 결제 · 결제 확인과 인터뷰 완료 후 AI 분석<br />결과는 자기성찰용 참고 콘텐츠이며 미래의 실현을 보장하지 않습니다.</p>
+        </section>
+        <div className={`${s.resultActions} ${s.memoryActions}`}>
+          <div><p className={s.eyebrow}>KEEP YOUR NEXT CHAPTER</p><p>이 미래를 오래 간직해보세요.</p></div>
+          <ReportImageSave title={`${magazine.name}님의 미래 기억`} sections={[
+            { title: `${magazine.futureYear}년의 미래 기억`, body: `${magazine.name}님의 인터뷰` },
+            ...magazine.sections.map(section => ({ title: section.title, body: section.body })),
+            ...(hasMeaningfulAnswer(magazine.messageToPresent) ? [{ title: "현재의 나에게 보내는 메시지", body: magazine.messageToPresent }] : [])
+          ]} />
+          <button className={s.button} onClick={() => { trackPdfDownload("free"); downloadMemoryPdf(magazine); }}>PDF 저장</button>
+          {!hasFutureCoordinatePayment ? <Link className={`${s.button} ${s.secondary}`} href="/interview">답변 다듬기</Link> : null}
+        </div>
+      </section>
+    </main>
+  );
   return (
-    <main className="page-shell min-h-screen bg-background">
+    <main className="page-shell min-h-screen bg-background memory-legacy-page">
       <Header />
       <MagazineCover magazine={magazine} />
 

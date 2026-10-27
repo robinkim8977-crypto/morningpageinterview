@@ -35,8 +35,8 @@ export function InterviewSection() {
     useEffect(() => { const save = () => persist(); const hidden = () => { if (document.visibilityState === "hidden")
         save(); }; const id = window.setInterval(save, 3000); window.addEventListener("pagehide", save); document.addEventListener("visibilitychange", hidden); return () => { window.clearInterval(id); window.removeEventListener("pagehide", save); document.removeEventListener("visibilitychange", hidden); }; }, [persist]);
     if (!session)
-        return <main className={s.page}>
-        <section className={s.shell}>
+        return <main className={`${s.page} ${s.journeyPage}`}>
+        <section className={`${s.shell} ${s.interviewShell}`}>
         <p role="status">미래의 기록을 불러오고 있어요.</p>
         </section>
         </main>;
@@ -73,13 +73,13 @@ export function InterviewSection() {
         return;
     } latest.current = null; trackInterviewComplete(); router.push("/generating"); }
     const cardSession = { ...session, answers: [...session.answers.filter(a => a.questionId !== q.id), { questionId: q.id, answer }] };
-    return <main className={s.page}>
+    return <main className={`${s.page} ${s.journeyPage}`}>
     <header className={s.header}>
     <Link href="/" className={s.brand}>THE MORNING PAGE<small>INTERVIEW / 미래의 나 만들기</small>
     </Link>
     <span className={s.fine}>{isNew ? `${session.futureYear}년 후의 ${session.name}` : "이전 인터뷰 이어 쓰기"}</span>
     </header>
-    <section className={s.shell}>{reveal ? <>
+    <section className={`${s.shell} ${s.interviewShell}`}>{reveal ? <>
         <div className={s.center}>
         <p className={s.eyebrow}>HELLO, FUTURE ME</p>
         <h1 className={s.title}>조금씩 모습이 보이네요.</h1>
@@ -106,9 +106,10 @@ export function InterviewSection() {
         <span>{q.phase} / {q.theme}</span>
         <span>{index + 1} / {list.length}</span>
         </div>
-        <div className={s.progress} aria-label={`${list.length}개 중 ${index + 1}번째 질문`}>{list.map((item, i) => <span key={item.id} className={i <= index ? s.on : ""}/>)}</div>
+        <div className={s.progress} role="progressbar" aria-valuemin={1} aria-valuemax={list.length} aria-valuenow={index + 1} aria-label="인터뷰 진행 상황">{list.map((item, i) => <span key={item.id} className={i <= index ? s.on : ""}/>)}</div>
         <div className={s.layout}>
-        <div>
+        <div className={s.questionPanel}>
+        <p className={s.eyebrow}>QUESTION {String(index + 1).padStart(2, "0")} / A CONVERSATION WITH YOUR FUTURE</p>
         <h1 className={s.title}>{lead}</h1>
         <p className={s.description} style={{ whiteSpace: "pre-line" }}>{body.join("\n\n")}</p>{q.kind === "choice" ? <>
             <p className={s.fine}>{q.max === 1 ? "하나 선택" : `최대 ${q.max}개 선택`} · 직접 입력할 수도 있어요.</p>

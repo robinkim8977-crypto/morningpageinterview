@@ -7,15 +7,9 @@ export function FutureSelfCard({ session, sample = false }: {
     const answer = (id: number) => session?.answers.find(a => a.questionId === id)?.answer || "아직 고르지 않았어요";
     return <aside className={s.profile}>
     <p className={s.eyebrow}>MY NEXT CHAPTER</p>
-    <div className={s.portrait} aria-hidden="true">
-    <div className={s.halo}/>
-    <div className={s.body}/>
-    <div className={s.head}>
-    <span className={s.eye}/>
-    <span className={s.smile}/>
-    </div>
-    <div className={s.hair}/>
-    <span className={s.spark}>✦</span>
+    <div className={s.profileWindow} aria-hidden="true">
+      <span className={s.destinationMark}>↗</span>
+      <span className={s.profileHorizon}>MY POSSIBLE SELF</span>
     </div>
     <h3>{sample ? "5년 후의 소윤" : `${session?.futureYear || 5}년 후의 ${session?.name || "나"}`}</h3>
     <p className={s.sub}>{sample ? "나만의 리듬으로 살아가는 사람" : "조금씩 선명해지는 미래의 나"}</p>

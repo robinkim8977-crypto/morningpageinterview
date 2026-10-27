@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import s from "./FutureSelf.module.css";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { readPaymentReceipt } from "@/lib/payment";
@@ -24,10 +25,10 @@ export function GeneratingSection() {
   }, []);
 
   return (
-    <main className="page-shell min-h-screen bg-background">
+    <main className={`${s.page} ${s.journeyPage}`}>
       <Header />
       <section className="grid min-h-[calc(100vh-92px)] place-items-center px-6 text-center">
-        <div className="grid justify-items-center">
+        <div className={`${s.transitionPanel} grid justify-items-center`}>
           <div className="hourglass mb-10" aria-hidden="true" />
           <p className="mb-16 text-[clamp(24px,2.2vw,34px)] font-medium tracking-[-0.04em]">Future Memory</p>
           <p className="ko-keep text-[clamp(22px,2.2vw,32px)] font-medium leading-normal tracking-[-0.04em]">
