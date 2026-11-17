@@ -362,6 +362,15 @@ export function createPaymentUsageLedger({
   }
 
   return {
+    async checkAvailability() {
+      // A fixed, non-customer key checks writes as well as reads without
+      // reserving a payment or accumulating health-check records.
+      const key = `${safeNamespace}:future-coordinate:health:v1`;
+      const value = "ready";
+      if (await store.set(key, value) !== "OK" || await store.get(key) !== value) {
+        throw new PaymentLedgerError("PAYMENT_LEDGER_UNAVAILABLE", "결제 기록 저장소를 확인하지 못했습니다.");
+      }
+    },
     reserve,
     inspect: read,
     markStaleProcessingFailed,

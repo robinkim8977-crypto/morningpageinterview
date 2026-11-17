@@ -254,6 +254,28 @@ test("결제부터 AI 생성과 운영 복구까지 외부 비용 없이 검증�
   const { POST: completePayment } = await import("../app/api/payments/complete/route.ts");
   const { POST: createReport } = await import("../app/api/report/route.ts");
   const { POST: recoverReport } = await import("../app/api/admin/recovery/route.ts");
+  const { GET: paymentReadiness } = await import("../app/api/payments/readiness/route.ts");
+
+  await t.test("결제 전 점검은 저장소 장애 시 결제를 막고 복구 후 다시 허용한다", async () => {
+    resetState();
+    state.redisAvailable = false;
+    const unavailable = await paymentReadiness();
+    assert.equal(unavailable.status, 503);
+    assert.equal((await unavailable.json()).ready, false);
+    assert.equal(unavailable.headers.get("Cache-Control"), "no-store");
+    assert.equal(state.portoneCalls, 0);
+    assert.equal(state.openaiCalls, 0);
+
+    state.redisAvailable = true;
+    const recovered = await paymentReadiness();
+    assert.equal(recovered.status, 200);
+    assert.equal((await recovered.json()).ready, true);
+    await paymentReadiness();
+    assert.equal(state.redis.size, 1);
+    assert.match([...state.redis.keys()][0], /health:v1$/);
+    assert.equal(state.portoneCalls, 0);
+    assert.equal(state.openaiCalls, 0);
+  });
 
   await t.test("정상 결제는 검증되고 리포트는 한 번만 생성된다", async () => {
     resetState();

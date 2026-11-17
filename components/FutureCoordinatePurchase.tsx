@@ -59,6 +59,14 @@ async function verifyPayment(paymentId: string) {
   savePaymentReceipt(paymentId);
 }
 
+async function checkPaymentReadiness() {
+  const response = await fetch("/api/payments/readiness", { cache: "no-store" });
+  const data = await response.json() as { ready?: boolean; message?: string };
+  if (!response.ok || data.ready !== true) {
+    throw new Error(data.message || "리포트 제공 서비스를 확인하지 못했습니다. 잠시 후 다시 이용해 주세요.");
+  }
+}
+
 export function FutureCoordinatePurchase() {
   const router = useRouter();
   const [customerName, setCustomerName] = useState("");
@@ -176,6 +184,9 @@ export function FutureCoordinatePurchase() {
     startAnalyticsCheckout(selectedPaymentMethod.id);
 
     try {
+      // Check before opening the PG window: a paid customer must not be the
+      // first signal that the report's durable usage store is unavailable.
+      await checkPaymentReadiness();
       const response = await PortOne.requestPayment({
         storeId,
         ...paymentRequestMethod(selectedPaymentMethod),
