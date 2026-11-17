@@ -244,8 +244,10 @@ test("결제부터 AI 생성과 운영 복구까지 외부 비용 없이 검증�
   process.env.PORTONE_API_SECRET = "test-portone-secret";
   process.env.PORTONE_API_BASE_URL = "https://mock.portone.test";
   process.env.NEXT_PUBLIC_PORTONE_STORE_ID = "store-test";
-  process.env.KV_REST_API_URL = "https://mock.redis.test";
-  process.env.KV_REST_API_TOKEN = "test-redis-token";
+  process.env.PAYMENT_LEDGER_KV_REST_API_URL = "https://mock.redis.test";
+  process.env.PAYMENT_LEDGER_KV_REST_API_TOKEN = "test-redis-token";
+  process.env.KV_REST_API_URL = "https://archived.redis.test";
+  process.env.KV_REST_API_TOKEN = "archived-redis-token";
   process.env.PAYMENT_USAGE_HMAC_SECRET = "h".repeat(64);
   process.env.PAYMENT_LEDGER_NAMESPACE = "integration-test";
   process.env.ADMIN_RECOVERY_SECRET = "s".repeat(64);

@@ -395,8 +395,14 @@ return 1
 function configuredRedisStore() {
   if (redisStore) return redisStore;
 
-  const url = process.env.KV_REST_API_URL?.trim() || process.env.UPSTASH_REDIS_REST_URL?.trim();
-  const token = process.env.KV_REST_API_TOKEN?.trim() || process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  // Select a complete pair from one integration. Never combine a restored
+  // database URL with credentials left over from the archived database.
+  const connections = [
+    { url: process.env.PAYMENT_LEDGER_KV_REST_API_URL?.trim(), token: process.env.PAYMENT_LEDGER_KV_REST_API_TOKEN?.trim() },
+    { url: process.env.KV_REST_API_URL?.trim(), token: process.env.KV_REST_API_TOKEN?.trim() },
+    { url: process.env.UPSTASH_REDIS_REST_URL?.trim(), token: process.env.UPSTASH_REDIS_REST_TOKEN?.trim() }
+  ];
+  const { url, token } = connections.find((connection) => connection.url || connection.token) ?? {};
   if (!url || !token) {
     throw new PaymentLedgerError(
       "PAYMENT_LEDGER_NOT_CONFIGURED",
